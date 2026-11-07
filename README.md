@@ -59,7 +59,7 @@ Player paths and live packing counts are published through a separate shared pre
 
 Menu quantities follow the limiting ingredient after queued-ticket commitments and other cart items. The server rechecks the entire cart and rejects overselling. Accepting a ticket consumes its physical ingredients once. Minus removes one, × clears an item type, and Clear all empties the cart or bag. Queued tickets can be edited or cancelled; accepted tickets are locked.
 
-The full-width **Delivery simulator** is a main stage on every role page, above the restaurant floor. Select an order tab to follow its courier and complete the handoff or receipt steps; the Demo screen remains read-only.
+The full-width **Delivery simulator** appears on every role page, directly below the restaurant floor, and shrinks to a slim bar until a delivery order exists. Select an order tab to follow its courier and complete the handoff or receipt steps; the Demo screen remains read-only.
 
 Delivery is an accelerated simulation with fictional destinations: Maple House (1.2 km, 18 game seconds), Park House (2.8 km, 30 seconds), and River House (4.5 km, 45 seconds). A ready bag triggers a six-second courier approach. A matching-reference pickup starts the persisted trip; arrival enables explicit receipt confirmation. Pickup and delivery are distinct statuses. Refreshing or opening another device keeps the same clock. These are illustrative ETAs, not routing or traffic estimates.
 

@@ -91,6 +91,9 @@ export function DeliveryBoard({state,act,busy,clockOffset,readOnly=false,preferr
   const orders=[...state.orders].reverse().filter(o=>o.delivery&&o.status!=='cancelled');
   useEffect(()=>{if(preferredOrderId)setSelected(preferredOrderId);},[preferredOrderId]);
   const order=orders.find(o=>o.id===selected)||orders.find(o=>o.id===preferredOrderId)||orders.find(o=>o.status!=='delivered')||orders[0];
+  if(orders.length===0) return <section id="delivery-simulator" aria-label="Delivery simulator" className="delivery-board delivery-main-stage delivery-idle">
+    <span aria-hidden="true">🏪 → 🛵 → 🏡</span><div><b>Delivery simulator</b><p>No deliveries yet. Choose Delivery when ordering and the courier's trip will show here.</p></div>
+  </section>;
   return <section id="delivery-simulator" aria-label="Delivery simulator" className="delivery-board delivery-main-stage">
     <div className="delivery-stage-header"><div><small>LIVE DELIVERY STAGE</small><h2>Delivery simulator</h2><p>Follow a courier from pickup to the customer’s door.</p></div><div className="delivery-stage-links"><span>{orders.length} delivery {orders.length===1?'order':'orders'}</span><a href="#restaurant-floor">Restaurant floor ↓</a></div></div>
     {orders.length>0?<><div className="delivery-order-tabs" aria-label="Choose delivery order">{orders.map(o=><button key={o.id} className={o.id===order.id?'selected':''} onClick={()=>setSelected(o.id)} aria-pressed={o.id===order.id}>{o.id} · {o.customer}<small>{o.delivery.name}</small></button>)}</div><DeliveryJourney key={order.id} {...{order,act,busy,clockOffset,readOnly}}/></>:<div className="delivery-empty-stage"><span aria-hidden="true">Pickup → Drop-off</span><div><b>No courier trips yet</b><p>Choose Delivery at the order counter to follow a courier here.</p></div></div>}
