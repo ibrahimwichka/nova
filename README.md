@@ -1,26 +1,18 @@
 # Nova Kitchen Lab
 
-A playable hackathon prototype for testing how orders, shortages, staffing, packing, and pickup connect. Two Macs are enough; no cameras or hardware purchases are required.
+A connected restaurant demonstration for exploring customer arrival, preparation, packing verification, delivery and operational recovery. Two Macs are enough; no new hardware is required.
 
 ## Hosted testing
 
-New and reset restaurants start with **zero orders**. Orders appear only when a customer places one or you explicitly apply a rush challenge. Refreshing preserves the shared restaurant; use **Reset for another round** to clear live tickets and restore resources. Saved drills remain available and can restore their recorded snapshots when explicitly restarted.
+Start in **Customer** for a first-person walk to the counter and ordering. **Kitchen** prepares and verifies the same live ticket; **Owner** oversees service, stock and AI recommendations. The existing Dinner Service entrance is preserved.
 
-Every view has an expanded **How this page works** guide with its role, steps, controls, and explanation of what syncs. Collapse it once you know the flow.
+The workspaces are **Experience**, **Delivery**, **Inventory**, **Scenarios** and **Operations**. Operations separates prep planning, team/capacity, finances/receipts and packing/camera controls. Forms and participant positions survive workspace changes. Scenarios includes shared pause, scrubbing and 0.5×–4× playback controls.
 
-Open the deployed site on both Macs. All views share one persisted restaurant. The client polls the lightweight live endpoint every 400 ms after the previous response; synchronized movement paths and courier timestamps animate between updates:
+Open the same private hosted Site on both Macs and sign in with allowed accounts. These are demonstration perspectives, not separate permission levels. All views use one persisted restaurant and poll the live endpoint after each previous response, approximately every 400 ms.
 
-- `/?view=owner`: overlook the restaurant floor, choose challenge cards, and play fixed versus recovery plans.
-- `/?view=kitchen`: walk to the ticket pass and cooking stations, assemble a bag item by item, and verify it before handoff.
-- `/?view=customer`: walk in, choose from the menu, wait for the kitchen player, collect with a matching reference, and leave.
-- `/?view=display`: read-only restaurant floor, live tickets, courier trips, and scenario playback.
-- `/?view=split`: Customer and Owner together, with separate controls and shared moving players.
+Fresh or reset restaurants start with **zero orders**. Refresh and deployment preserve existing orders. Use the explicit Owner inventory reset to clear live tickets and restore resources; saved drills remain.
 
-Use **WASD / arrow keys** to walk freely without focusing the floor; typing in form fields never moves your player. Click-to-walk and destination markers are optional, and a manual step interrupts an automatic walk. Customer ordering, pickup, and leaving do not require an exact location or force a route. The direction arrow suggests a destination. **E** opens the customer menu or collects a ready pickup; kitchen actions still use their stations. In split view, click a player panel or the **WASD: Customer / Owner** buttons to choose which player the keyboard controls. The mission panel gives the next action. Owner and Kitchen use category tabs. Owner has Overview, Prep, Inventory, Team, Finances, Scenarios, and Delivery. Kitchen has Kitchen floor, Prep, Packing & camera, Inventory, Team, and Delivery. Tabs keep in-progress forms, bag contents, and player positions mounted; movement keys work only on the floor tab. Customer, split view, and Demo screen retain their detailed controls.
-
-Sites hosting is private by default. Each viewer must sign in with an account allowed to view the Site. Role tabs are demonstration perspectives, not separate permission levels. All viewers work in the same restaurant.
-
-**Mac 1:** owner and kitchen tabs. **Mac 2:** customer view. Put the display view in any spare window. See [the two-Mac test script](docs/TESTING.md).
+See the [professional demo walkthrough, screenshots, validation and deployment steps](docs/PROFESSIONAL_DEMO.md).
 
 ## Run locally
 
@@ -42,7 +34,7 @@ For a production build, run `npm run build` and `npm start` (or `npm run start:l
 ## Included
 
 - Shared persisted orders: received, preparing, packing, ready, collected.
-- Interactive restaurant scene, collision-aware walking, customer menu, station tasks, and item-by-item game packing.
+- Interactive restaurant scene, collision-aware walking, customer menu, station tasks, and item-by-item simulated packing.
 - Ingredient reservations, staff skills, equipment availability, and explicit blocked states.
 - Absence, shortage, equipment-failure, and six-order-rush scenarios.
 - Fixed assignments versus cross-trained recovery under identical starting conditions.
@@ -53,9 +45,9 @@ For a production build, run `npm run build` and `npm start` (or `npm run start:l
 
 ## What is simulated
 
-Orders, recipes, staff, stock, durations, preparation, and disruptions are sample data. Game cooking takes two seconds per station and represents a manual simulation action, not a measurement of cooking time. Required station completion is saved on the shared order; packing begins after all required stations are complete. Drink-only orders use the packing station. Original detailed controls can still advance preparation directly.
+Orders, recipes, staff, stock, durations, preparation, and disruptions are sample data. Station preparation takes two seconds per station and represents a manual simulation action, not a measurement of cooking time. Required station completion is saved on the shared order; packing begins after all required stations are complete. Drink-only orders use the packing station. Original detailed controls can still advance preparation directly.
 
-Player paths and live packing counts are published through a separate shared presence table, independent of kitchen revisions. Other views animate those paths using server-synchronized time. Presence expires after 20 seconds without a heartbeat; closing a view removes its player. The unfinished bag is controlled by its kitchen tab and broadcast for observation. Reopening or leaving a packing mission clears it; check it again before handoff.
+Player paths and live packing counts are published through a separate shared presence table, independent of kitchen revisions. Other views animate those paths using server-synchronized time. Presence expires after 20 seconds without a heartbeat; closing a view removes its participant. The unfinished bag is controlled by its kitchen tab and broadcast for observation. Reopening or leaving a packing mission clears it; check it again before handoff.
 
 Menu quantities follow the limiting ingredient after queued-ticket commitments and other cart items. The server rechecks the entire cart and rejects overselling. Accepting a ticket consumes its physical ingredients once. Minus removes one, × clears an item type, and Clear all empties the cart or bag. Queued tickets can be edited or cancelled; accepted tickets are locked.
 
