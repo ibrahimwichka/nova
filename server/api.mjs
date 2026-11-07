@@ -4,6 +4,9 @@ import { HOMES } from '../shared/delivery.mjs';
 import { validatePresence } from './presence.mjs';
 import { simulate, compareScenario } from './simulation.mjs';
 import { inspectImage, explainScenario } from './vision.mjs';
+import { ensureOperations, operationsEvidence, requestRestock, receiveRestock, recordWaste, saveReviewedReceipt } from './operations.mjs';
+import { runCopilot } from './ai-copilots.mjs';
+import { aiModels } from './models.mjs';
 const randomUUID = () => crypto.randomUUID();
 let visionRunning = false;
 const visionTimes = [];
@@ -22,7 +25,7 @@ function validateItems(raw) {
   if (!Object.keys(items).length) fail('Choose at least one item, or cancel the ticket.');
   return items;
 }
-export function createApi({ store, presence, env = {}, extraConfig = {} }) {
+export function createApi({ store, presence, env = {}, extraConfig = {}, aiRunner = runCopilot }) {
   return async function handle(request) {
     try {
       const requestUrl = new URL(request.url);
@@ -35,6 +38,7 @@ export function createApi({ store, presence, env = {}, extraConfig = {} }) {
         return json({}, 200, { ok: true, serverTime: Date.now() });
       }
       let state = await store.load();
+      ensureOperations(state);
       async function update(fn, live = true) {
         const next = clone(state);
         const result = fn(next);
@@ -44,8 +48,8 @@ export function createApi({ store, presence, env = {}, extraConfig = {} }) {
         state = next;
         return result;
       }
-      const config = () => ({ visionConfigured: Boolean(env.OPENROUTER_API_KEY), model: env.OPENROUTER_MODEL || 'google/gemini-2.5-flash', catalog: CATALOG, ingredients: INGREDIENTS, homes: HOMES, lanUrls: [], ...extraConfig });
-      const payload = () => ({ state, config: config() });
+      const config = () => ({ visionConfigured: Boolean(env.OPENROUTER_API_KEY), model: aiModels(env).packing, aiModels: aiModels(env), catalog: CATALOG, ingredients: INGREDIENTS, homes: HOMES, lanUrls: [], ...extraConfig });
+      const payload = () => ({ state, config: config(), operations: operationsEvidence(state) });
       function getOrder(id) { const order = state.orders.find(o => o.id === id); if (!order) fail('Order not found.', 404); return order; }
 async function api(req, res, pathname) {
   if (req.method === 'GET' && pathname === '/api/state') return json(res, 200, payload());
@@ -55,6 +59,53 @@ async function api(req, res, pathname) {
   if (req.headers.origin && new URL(req.headers.origin).host !== req.headers.host) fail('Cross-origin changes are not supported.', 403);
   if (req.headers['sec-fetch-site'] === 'cross-site') fail('Cross-site changes are not supported.', 403);
   const input = await body(req);
+  if (pathname === '/api/restock-requests') {
+    await update(next => requestRestock(next, input), false);
+    return json(res, 201, payload());
+  }
+  if (pathname === '/api/restock') {
+    await update(next => receiveRestock(next, input));
+    return json(res, 200, payload());
+  }
+  if (pathname === '/api/inventory/waste') {
+    await update(next => recordWaste(next, input));
+    return json(res, 200, payload());
+  }
+  if (pathname === '/api/receipts') {
+    await update(next => saveReviewedReceipt(next, input));
+    return json(res, 201, payload());
+  }
+  if (pathname === '/api/ai/prep/start') {
+    const analysis = state.operations.analyses.prep;
+    if (!analysis || analysis.id !== input.analysisId || analysis.basedOnVersion !== state.version) fail('The kitchen changed. Refresh the AI preparation plan before starting an order.', 409);
+    if (!analysis.data.priorities.some(p => p.orderId === input.orderId && p.action === 'start')) fail('This order was not recommended to start.', 409);
+    await update(next => { prepareOrder(next, input.orderId); next.appliedPlan = null; });
+    return json(res, 200, payload());
+  }
+  const copilotRoute = pathname.match(/^\/api\/ai\/(prep|inventory|staff|finance|receipt)$/);
+  if (copilotRoute) {
+    const kind = copilotRoute[1], evidence = operationsEvidence(state), base = snapshot(state), basedOnVersion = state.version;
+    if (kind === 'prep') evidence.prepSchedule = simulate(base, 'adaptive');
+    if (kind === 'staff' && (typeof input.message !== 'string' || !input.message.trim() || input.message.length > 2000)) fail('Describe the staffing or equipment disruption in up to 2,000 characters.');
+    const model = aiModels(env)[kind];
+    const data = await aiRunner(kind, evidence, input, { key: env.OPENROUTER_API_KEY, model, reasoning: ['prep', 'inventory', 'staff', 'finance'].includes(kind) });
+    // Keep the result if another player moved the kitchen forward during inference.
+    // Its original version remains visible, and stale recommendations cannot act.
+    state = await store.load(); ensureOperations(state);
+    await update(next => {
+      if (kind === 'staff') {
+        const changes = validateChanges({ absentWorker: data.absentWorker, equipmentDown: data.equipmentDown });
+        const scenario = { id: randomUUID(), name: 'AI disruption: ' + input.message.trim().slice(0, 50), createdAt: new Date().toISOString(), snapshot: base, changes, comparison: compareScenario(base, changes) };
+        next.scenarios.unshift(scenario); next.scenarios = next.scenarios.slice(0, 20); data.scenarioId = scenario.id;
+      }
+      next.operations.analyses[kind] = { id: randomUUID(), generatedAt: new Date().toISOString(), basedOnVersion, model, data };
+      if (kind === 'inventory' && basedOnVersion === next.version) {
+        for (const row of operationsEvidence(next).inventory.filter(r => r.alert && r.suggestedQuantity > 0)) requestRestock(next, { ingredient: row.id, quantity: Math.min(1000, row.suggestedQuantity) }, 'AI inventory review');
+      }
+      event(next, `AI ${kind} review completed with ${model}.`);
+    }, false);
+    return json(res, 200, payload());
+  }
   if (pathname === '/api/reset') {
     await update(next => { const library = next.scenarios; const fresh = initialState(); Object.assign(next, fresh); next.scenarios = library; event(next, 'Restaurant reset to zero orders. Saved scenarios are preserved.'); });
     return json(res, 200, payload());
@@ -84,7 +135,7 @@ async function api(req, res, pathname) {
     if (input.fulfillment && !['delivery', 'pickup'].includes(input.fulfillment)) fail('Choose pickup or delivery.');
     if (state.orders.length >= 50) fail('This demo has reached 50 orders. Reset the restaurant to start another run.');
     const id = `C${randomUUID().slice(0, 5).toUpperCase()}`;
-    await update(next => { next.orders.push({ id, customer: name, source: 'Customer · sample', due: 18, arrival: 0, status: 'queued', revision: 1, items, fulfillment: delivery ? 'delivery' : 'pickup', ...(delivery ? { delivery } : {}), note: 'Placed from the customer view.' }); next.appliedPlan = null; event(next, `${id}: ${name} placed an order.`, 'success'); });
+    await update(next => { next.orders.push({ id, customer: name, source: 'Customer · sample', due: 18, arrival: 0, createdAt: new Date().toISOString(), status: 'queued', revision: 1, items, fulfillment: delivery ? 'delivery' : 'pickup', ...(delivery ? { delivery } : {}), note: 'Placed from the customer view.' }); next.appliedPlan = null; event(next, `${id}: ${name} placed an order.`, 'success'); });
     return json(res, 201, { ...payload(), orderId: id });
   }
   const orderRoute = pathname.match(/^\/api\/orders\/([^/]+)\/(prepare|finish|game-cook|verify|ready|collect|deliver|edit|cancel|recheck)$/);
@@ -109,7 +160,7 @@ async function api(req, res, pathname) {
         const now = Date.now(); while (visionTimes[0] < now - 60_000) visionTimes.shift();
         if (visionTimes.length >= 10) fail('The demo allows 10 camera checks per minute. Please wait a moment.', 429);
         visionTimes.push(now); visionRunning = true;
-        try { observation = await inspectImage(input.image, { key: env.OPENROUTER_API_KEY, model: env.OPENROUTER_MODEL }); } catch (error) { if (error.name === 'TimeoutError') fail('The vision request timed out. Retry or use a manual check.', 504); throw error; } finally { visionRunning = false; }
+        try { observation = await inspectImage(input.image, { key: env.OPENROUTER_API_KEY, model: aiModels(env).packing }); } catch (error) { if (error.name === 'TimeoutError') fail('The vision request timed out. Retry or use a manual check.', 504); throw error; } finally { visionRunning = false; }
       } else if (input.mode === 'demo') observation = demoObservation(order, input.fixture);
       else if (input.mode === 'manual' || input.mode === 'game') observation = input.observation;
       else fail('Choose camera, manual, game, or demo verification.');
@@ -146,7 +197,7 @@ async function api(req, res, pathname) {
     const scenario = state.scenarios.find(s => s.id === id);
     if (!scenario) fail('Scenario not found.', 404);
     if (action === 'explain') {
-      const text = await explainScenario(scenario, { key: env.OPENROUTER_API_KEY, model: env.OPENROUTER_MODEL });
+      const text = await explainScenario(scenario, { key: env.OPENROUTER_API_KEY, model: aiModels(env).staff });
       await update(next => { const s = next.scenarios.find(s => s.id === id); if (s) s.explanation = text; }, false);
     } else if (action === 'replay') {
       const comparison = compareScenario(scenario.snapshot, scenario.changes);

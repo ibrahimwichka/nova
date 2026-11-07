@@ -82,3 +82,20 @@ The React/Vite client uses one portable Fetch API backend (`server/api.mjs`). Lo
 `OPENROUTER_API_KEY` belongs in local ignored `.env` or hosted runtime secrets. It is never returned by the API or included in the client bundle. `OPENROUTER_MODEL` defaults to `google/gemini-2.5-flash`.
 
 Existing repository connection-test files are preserved and are unrelated to the app.
+
+## AI operations and restocking
+
+Owner, Kitchen, and Live split view include AI operations below the game. Owner receives a top-of-page alert when uncommitted stock reaches three units or less, an up-to-date AI estimate exceeds available stock, or someone opens a restock request. These are shared **in-app** messages; no email, SMS, supplier integration, or purchase is sent.
+
+- **Preparation copilot:** ranks current tickets and explains starts/holds/blockers. Start prep validates the plan version, ingredients, and qualified capacity again. Recommendations are advisory; no cooking happens automatically.
+- **AI packing check:** at the game packing bench, expand AI camera packing check. Use an iPhone camera/photo or Mac camera. The vision model counts only visible food/package identities; obscured or uncertain evidence cannot seal a bag. A human confirms a fresh matching check. Game bag counts remain a separately labeled deterministic test.
+- **Inventory copilot:** estimates additional next-30-minute ingredient demand from the current demo snapshot, then opens owner requests where stock is insufficient. Sparse history means this is an AI estimate, not a trained demand forecast. Threshold alerts work without any AI calls.
+- **Staff copilot:** describe a known worker absence or equipment outage in plain language. AI parses it; the deterministic simulator produces qualified coverage and remaining blockers. Review the comparison before applying; a stale scenario cannot apply.
+- **Financial assistant:** explains completed simulated orders, current sample menu prices, estimated ingredient costs, reviewed receipts, and explicitly logged waste. Contribution excludes labor, tax, rent and fees; it is not actual net profit. Prices are demo assumptions. Reviewed USD receipt lines update matched unit cost estimates; other currencies stay separate.
+- **Receipt extraction:** choose a JPEG/PNG/WebP receipt photo, explicitly send it to AI, review/edit the draft, then save. Images are not stored. Saving a receipt does not increase stock. Match receipt quantities to the ingredient unit first.
+
+To demonstrate restocking on two Macs: open Kitchen on one and Owner on the other. In Owner operations, expand **Record waste or simulate a shortage**, choose an ingredient, and select **Simulate stockout**. The shared alert appears immediately. Kitchen can request units, or **Forecast & request stock** can create an AI owner request. Owner records full or partial received quantities; stock and menu availability update on both Macs. A request is not an actual supplier order.
+
+No new equipment is required. The server needs `OPENROUTER_API_KEY` with credits/access to the selected models (the hosted demo already has the supplied key). Task defaults are GPT-6.1 Terra for prep/inventory, Claude Opus 5.5 for staffing/financial explanations, and Gemini 4 Argon for packing/receipt vision. See `.env.example` for per-task overrides. Model identifiers were checked against the live OpenRouter catalogue at implementation. Key credentials remain server-side; analysis buttons make real paid requests, while screen polling and threshold alerts do not call AI.
+
+For the optional phone demo, photograph a well-lit tray before closing the bag or upload a readable receipt photo. No continuous camera feed, new webcam, or third Mac is needed. Real demand forecasting would need historical timestamped POS data, delivery ETAs and lead times; real margin reporting would need real prices and cost records. This MVP intentionally labels the demo assumptions.
