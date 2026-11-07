@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { SPOTS, CUSTOMER_SPOTS, KITCHEN_SPOTS, TILE, findPath, walkable, nearSpot, requiredStations, orderProblems } from './game-logic.mjs';
+import { SPOTS, CUSTOMER_SPOTS, KITCHEN_SPOTS, TILE, findPath, walkable, nearSpot, movementForKey, suggestedCustomerSpot, requiredStations, orderProblems } from './game-logic.mjs';
 import './game.css';
 import { availableInventory, itemLimit, stockIssue } from '../shared/stock.mjs';
 import { presencePosition } from '../shared/presence.mjs';
-import { DeliveryJourney, DeliveryBoard } from './Delivery.jsx';
 import { usePlayerPresence } from './use-presence.jsx';
 
 const FOOD = { burger: '🍔', wrap: '🌯', fries: '🍟', sprite: '🥤' };
@@ -29,8 +28,8 @@ function useWalk(role, publish) {
   function step(dx, dy) {
     route.current = [];
     const p = positionRef.current, next = { x: p.x + dx, y: p.y + dy };
-    if (walkable(role, next.x, next.y)) { publish([p, next]); positionRef.current = next; setPosition(next); }
-    else publish([p]);
+    if (walkable(role, next.x, next.y)) { publish([p, next]); positionRef.current = next; setPosition(next); setWalking(true); }
+    else { publish([p]); setWalking(false); }
   }
   return { position, walking, move, step };
 }
@@ -63,7 +62,7 @@ function Equipment({ id, x, available, active, label }) {
   </g>;
 }
 
-function Restaurant({ role, state, config, selected, position, walking, move, step, onInteract, live, playerId }) {
+function Restaurant({ role, state, config, selected, position, walking, move, step, onInteract, live, playerId, keyboardActive }) {
   const room = useRef(null);
   const [tick, setTick] = useState(Date.now());
   useEffect(() => { const id = setInterval(() => setTick(Date.now() + (live?.clockOffset || 0)), 50); return () => clearInterval(id); }, [live?.clockOffset]);
@@ -85,15 +84,25 @@ function Restaurant({ role, state, config, selected, position, walking, move, st
     const rect = e.currentTarget.getBoundingClientRect();
     move({ x: Math.floor((e.clientX - rect.left) / rect.width * 24), y: Math.floor((e.clientY - rect.top) / rect.height * 15) });
   }
-  function key(e) {
-    const keys = { ArrowUp: [0,-1], w: [0,-1], ArrowDown: [0,1], s: [0,1], ArrowLeft: [-1,0], a: [-1,0], ArrowRight: [1,0], d: [1,0] };
-    const direction = keys[e.key] || keys[e.key.toLowerCase()];
-    if (direction && !observer) { e.preventDefault(); step(...direction); }
-    if (e.key.toLowerCase() === 'e' && !observer) { e.preventDefault(); onInteract(); }
-  }
+  const controls = useRef({ step, onInteract });
+  controls.current = { step, onInteract };
+  useEffect(() => {
+    if (observer || !keyboardActive) return;
+    function key(e) {
+      if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
+      if (e.target instanceof Element && e.target.closest('input,textarea,select,[contenteditable="true"],[role="textbox"],[role="combobox"]')) return;
+      const direction = movementForKey(e.key);
+      if (direction) { e.preventDefault(); controls.current.step(...direction); }
+      else if (e.key.toLowerCase() === 'e') { e.preventDefault(); controls.current.onInteract(); }
+    }
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, [observer, keyboardActive]);
+  const goal = role === 'customer' ? SPOTS[suggestedCustomerSpot(selected)] : null;
+  const directionAngle = goal ? Math.atan2(goal.y-position.y,goal.x-position.x)*180/Math.PI : 0;
   return <div className="room-wrap">
     <div className="room-topline"><span><i className="live-dot"/>{replay ? 'SCENARIO REPLAY' : 'SHARED RESTAURANT'}</span><span>{replay ? Math.floor(minute) + ' / 60 sim min · ' + state.playback.policy : 'NOVA / SERVICE FLOOR'}</span></div>
-    <div ref={room} className={'restaurant-room ' + (observer ? 'observer-room' : '')} tabIndex={observer ? undefined : 0} role="group" aria-label={observer ? 'Restaurant overview' : 'Restaurant game. Click the floor or use arrow keys or WASD to walk. E to interact.'} onKeyDown={key}>
+    <div ref={room} className={'restaurant-room ' + (observer ? 'observer-room' : '')} tabIndex={observer ? undefined : 0} role="group" aria-label={observer ? 'Restaurant overview' : 'Restaurant game. Use WASD or arrows to walk freely. E to interact. Optional click to walk.'}>
       <svg viewBox="0 0 960 600" onClick={clickFloor} aria-label="Interactive restaurant floor">
         <defs>
           <pattern id="kitchen-tile" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="#d5dfd4"/><path d="M40 0H0V40" fill="none" stroke="#becfc3" strokeWidth="1"/></pattern>
@@ -127,7 +136,8 @@ function Restaurant({ role, state, config, selected, position, walking, move, st
         {!observer && <Person {...local} color={role === 'kitchen' ? '#527d69' : role === 'owner' ? '#718aa5' : '#e09e4b'} chef={role === 'kitchen'} name={role==='owner'?'YOU / OWNER':'YOU'} you walking={walking}/>}
       </svg>
     </div>
-    <div className="room-bottomline">{observer ? <span>Orders and resource availability are shared across all devices.</span> : <><span><kbd>W A S D</kbd> / arrows to walk · click floor to move · <kbd>E</kbd> interact</span><button className="quiet" onClick={onInteract}>Interact nearby ↵</button></>}</div>
+    {goal && <div className="direction-hint"><span className="direction-arrow" aria-hidden="true" style={{transform:'rotate('+directionAngle+'deg)'}}>→</span><span><b>Suggested: {goal.name}</b><small>Optional direction · explore freely; actions work anywhere</small></span></div>}
+    <div className="room-bottomline">{observer ? <span>Orders and resource availability are shared across all devices.</span> : <><span><kbd>W A S D</kbd> / arrows to walk{keyboardActive ? ' · active player' : ' · click this view to control'} · optional click to walk · <kbd>E</kbd> interact</span><button className="quiet" onClick={onInteract}>{role==='customer'?'Menu / pickup action ↵':'Interact nearby ↵'}</button></>}</div>
   </div>;
 }
 
@@ -148,12 +158,12 @@ const GUIDES = {
     name: 'Customer',
     intro: 'Order a meal for delivery or pickup while the other Mac plays Kitchen. Menu quantities follow live ingredient stock; use minus or × to remove items.',
     steps: [
-      ['Walk in & order', 'Walk to the counter, open the menu, choose delivery or pickup, and set quantities. You can edit or remove items until Kitchen accepts the ticket. No payment is taken.'],
+      ['Explore & order', 'Move freely with WASD or arrows. Open the menu anywhere, choose delivery or pickup, and set quantities. You can edit or remove items until Kitchen accepts the ticket. No payment is taken.'],
       ['Wait for the kitchen', 'Your ticket appears on the other Mac. Its player must cook and pack it. Your status updates automatically; a missing item keeps the bag in the kitchen.'],
-      ['Collect the right bag', 'For delivery, watch the courier approach, match the pickup reference, and follow the trip to your selected house. For pickup, walk to Pickup counter and collect the bag.'],
-      ['Leave or play again', 'At the house, choose Confirm delivery received. Pickup guests can walk to Exit. Play another order starts a new visit; refreshing keeps the shared timeline.'],
+      ['Collect the right bag', 'For delivery, watch the courier approach, match the pickup reference, and follow the trip to your selected house. For pickup, choose Show reference & collect bag; walking to the counter is optional.'],
+      ['Leave or play again', 'At the house, choose Confirm delivery received. Pickup guests can leave when ready, with an optional walk to Exit. Play another order starts a new visit; refreshing keeps the shared timeline.'],
     ],
-    note: 'Click the floor or destination markers to walk. Focus the room to use WASD/arrows; E interacts nearby. You cannot walk through tables or into the kitchen.',
+    note: 'WASD/arrows work anywhere except while typing in a field. E opens the menu or collects a ready pickup. The direction arrow is a suggestion; no exact location is required. Tables and walls still block movement.',
   },
   kitchen: {
     name: 'Kitchen',
@@ -205,7 +215,6 @@ function CustomerMission({ state, config, act, busy, position, move, selected, s
   const [menuOpen, setMenuOpen] = useState(false), [left, setLeft] = useState(false), [editing, setEditing] = useState(false);
   const [fulfillment,setFulfillment] = useState('delivery'), [homeId,setHomeId] = useState('maple');
   const order = state.orders.find(o => o.id === selected);
-  const atCounter = nearSpot(position,'counter'), atPickup = nearSpot(position,'pickup'), atExit = nearSpot(position,'exit');
   const issues = orderProblems(order,state,config);
   const stock = availableInventory(state,config.catalog,editing?order?.id:undefined);
   const shortage = stockIssue(cart,stock,config.catalog);
@@ -213,18 +222,17 @@ function CustomerMission({ state, config, act, busy, position, move, selected, s
   const total = Object.values(cart).reduce((a,b)=>a+b,0);
   useEffect(()=>{if(editing&&order?.status!=='queued'){setEditing(false);setMenuOpen(false);}},[order?.status,editing]);
   useEffect(() => { if (!order) { setLeft(false); setMenuOpen(false); setEditing(false); } }, [order?.id]);
-  useEffect(() => { if (!atCounter && !editing) setMenuOpen(false); }, [atCounter]);
   useEffect(() => {
     if (!interact) return;
-    if (atCounter && !order) setMenuOpen(true);
-    else if (atPickup && order?.status === 'ready' && !order.delivery && !busy) act('/orders/'+order.id+'/collect',{code:order.pickupCode});
-    else if (atExit && order?.status === 'collected') setLeft(true);
+    if (!order) setMenuOpen(true);
+    else if (order?.status === 'ready' && !order.delivery && !busy) act('/orders/'+order.id+'/collect',{code:order.pickupCode});
+    else if (order?.status === 'collected') setLeft(true);
     setInteract(0);
-  }, [interact, atCounter]);
+  }, [interact]);
   async function place(e) {
     e.preventDefault();
     const r = editing ? await act('/orders/'+order.id+'/edit',{items:cart},'Updating the ticket…') : await act('/orders',{customer:name,items:cart,fulfillment,homeId},'Sending your order to the kitchen…');
-    if (r) { if(!editing){setSelected(r.orderId);localStorage.setItem('nova-game-order',r.orderId);localStorage.setItem('nova-game-name',name);move(SPOTS.lounge);} setMenuOpen(false);setEditing(false);setLeft(false); }
+    if (r) { if(!editing){setSelected(r.orderId);localStorage.setItem('nova-game-order',r.orderId);localStorage.setItem('nova-game-name',name);} setMenuOpen(false);setEditing(false);setLeft(false); }
   }
   const completed = order && ['collected','delivered','cancelled'].includes(order.status);
   const current = !order ? 0 : completed ? 5 : order.status === 'out_for_delivery' ? 4 : order.status === 'ready' ? 3 : 2;
@@ -232,8 +240,8 @@ function CustomerMission({ state, config, act, busy, position, move, selected, s
   return <aside className="mission-panel">
     <div className="mission-eyebrow">CUSTOMER / ORDER & DELIVERY</div>
     <h2>{!order?'What are we having?':order.status==='cancelled'?'Order cancelled.':order.status==='delivered'?'Your food is home.':order.status==='out_for_delivery'?'Follow your courier.':left?'Thanks for stopping by.':order.status==='collected'?'Pickup complete!':order.status==='ready'?'Your order is ready.':'The kitchen has your ticket.'}</h2>
-    <Steps labels={['Walk in','Order','Kitchen','Pickup','Delivery']} current={menuOpen&&!order?1:current}/>
-    {!order&&!menuOpen&&<><p>Walk to the counter to build your order. Choose delivery to a demo house or pickup at the restaurant.</p><div className="mission-illustration">🍔 <span>+</span> 🍟 <span>+</span> 🥤</div><WalkButton id="counter" {...{position,move}}/>{atCounter&&<button className="game-primary" onClick={()=>setMenuOpen(true)}>Open menu →</button>}</>}
+    <Steps labels={['Explore','Order','Kitchen','Pickup','Delivery']} current={menuOpen&&!order?1:current}/>
+    {!order&&!menuOpen&&<><p>Open the menu wherever you are. Explore with WASD while the kitchen prepares your meal. Choose delivery to a demo house or pickup at the restaurant.</p><div className="mission-illustration">🍔 <span>+</span> 🍟 <span>+</span> 🥤</div><WalkButton id="counter" {...{position,move}}/><button className="game-primary" onClick={()=>setMenuOpen(true)}>Open menu →</button></>}
     {menuOpen&&(!order||editing)&&<form onSubmit={place} className="game-menu">
       {!editing&&<><label>Your name<input value={name} maxLength="40" required onChange={e=>setName(e.target.value)}/></label><div className="fulfillment-choice"><button type="button" className={fulfillment==='delivery'?'chosen':''} onClick={()=>setFulfillment('delivery')}>🛵 Delivery</button><button type="button" className={fulfillment==='pickup'?'chosen':''} onClick={()=>setFulfillment('pickup')}>🛍 Pickup</button></div>{fulfillment==='delivery'&&<label>Demo destination<select value={homeId} onChange={e=>setHomeId(e.target.value)}>{config.homes.map(home=><option key={home.id} value={home.id}>{home.name} · {home.distanceKm} km · {home.travelSeconds}s demo trip</option>)}</select></label>}</>}
       <h3>{editing?'Edit the unstarted ticket':'Choose your meal'}</h3>
@@ -247,9 +255,9 @@ function CustomerMission({ state, config, act, busy, position, move, selected, s
       {issues.length>0&&<div className="game-alert">{issues.map(t=><p key={t}>{t}</p>)}</div>}
       {order.status==='packing'&&liveBag&&<div className="live-bag-preview"><b>Kitchen is packing now</b><p>{Object.entries(liveBag.counts).filter(([,n])=>n>0).map(([sku,n])=>FOOD[sku]+' ×'+n).join(' · ')||'Empty bag'}</p></div>}
       {order.verification?.status==='red'&&order.status==='packing'&&<div className="game-alert">The bag check caught a missing or extra item. The kitchen must fix it before handoff.</div>}
-      {order.delivery?<DeliveryJourney {...{order,act,busy}} clockOffset={live.clockOffset}/>:order.status==='ready'?<><div className="reference-card"><small>YOUR PICKUP REFERENCE</small><b>{order.pickupCode}</b></div><WalkButton id="pickup" {...{position,move}}/><button className="game-primary" disabled={!!busy||!atPickup} onClick={()=>act('/orders/'+order.id+'/collect',{code:order.pickupCode})}>Show reference & collect bag</button></>:null}
+      {order.delivery?<p className="hint">Follow this order in the <a href="#delivery-simulator">main delivery simulator ↑</a>. Walking around won’t interrupt the courier.</p>:order.status==='ready'?<><div className="reference-card"><small>YOUR PICKUP REFERENCE</small><b>{order.pickupCode}</b></div><WalkButton id="pickup" {...{position,move}}/><button className="game-primary" disabled={!!busy} onClick={()=>act('/orders/'+order.id+'/collect',{code:order.pickupCode})}>Show reference & collect bag</button></>:null}
       {['queued','preparing','packing'].includes(order.status)&&<><div className="waiting-message"><span className="waiting-dot"/>{order.status==='queued'?'Waiting for Kitchen to accept your ticket. You can still edit the items.':order.status==='preparing'?'The kitchen is working at the required stations.':'Your bag is being assembled and checked.'}</div><WalkButton id="lounge" {...{position,move}}>Take a seat nearby</WalkButton><p className="hint">On the other Mac, select {order.id} in Kitchen.</p></>}
-      {order.status==='collected'&&!left&&<><WalkButton id="exit" {...{position,move}}/><button className="game-primary" disabled={!atExit} onClick={()=>setLeft(true)}>Leave restaurant →</button></>}
+      {order.status==='collected'&&!left&&<><WalkButton id="exit" {...{position,move}}/><button className="game-primary" onClick={()=>setLeft(true)}>Leave restaurant →</button></>}
       {completed&&<button className="game-primary" onClick={again}>Play another order</button>}
     </>}
   </aside>;
@@ -291,7 +299,7 @@ function KitchenMission({state,config,act,busy,position,move,order,interact,setI
       else if(!required.length&&nearSpot(position,'packing'))cook('packing');
     }
   },[interact]);
-  if(!order) return <aside className="mission-panel"><div className="mission-eyebrow">PLAYER 02 / KITCHEN</div><h2>No tickets yet.</h2><p>The restaurant starts with zero orders. Ask the other Mac to open Customer, walk to the counter, and place the first order.</p><p>It will appear in the ticket strip below the room. Select it, accept it at Order tickets, then follow the cooking and packing steps.</p><a href="/?view=customer" target="_blank" rel="noreferrer">Open Customer in another tab ↗</a></aside>;
+  if(!order) return <aside className="mission-panel"><div className="mission-eyebrow">PLAYER 02 / KITCHEN</div><h2>No tickets yet.</h2><p>The restaurant starts with zero orders. Ask the other Mac to open Customer, open the menu, and place the first order.</p><p>It will appear in the ticket strip below the room. Select it, accept it at Order tickets, then follow the cooking and packing steps.</p><a href="/?view=customer" target="_blank" rel="noreferrer">Open Customer in another tab ↗</a></aside>;
   const stations=requiredStations(order,config.catalog), done=order.gameStations || [];
   const remaining=stations.filter(id=>!done.includes(id));
   const atStation=remaining.find(id=>nearSpot(position,id));
@@ -309,7 +317,7 @@ function KitchenMission({state,config,act,busy,position,move,order,interact,setI
     {order.status==='queued'&&<><p>Pick up this ticket at the pass. Accepting it reserves the ingredients.</p><WalkButton id="tickets" {...{position,move}}/><button className="game-primary" disabled={!!busy||!nearSpot(position,'tickets')||issues.length>0} onClick={()=>act('/orders/'+order.id+'/prepare')}>Accept ticket & start cooking →</button></>}
     {order.status==='preparing'&&<><p>Visit every required cooking station. Each task takes two game seconds.</p><div className="station-checklist">{stations.map(id=><button key={id} className={done.includes(id)?'task-done':''} onClick={()=>move(SPOTS[id])}><span>{done.includes(id)?'✓':'⌖'}</span>{SPOTS[id].name}<small>{done.includes(id)?'Completed':'Walk here'}</small></button>)}</div>{!stations.length&&<WalkButton id="packing" {...{position,move}}>Walk to drinks / packing</WalkButton>}{cooking?<div className="cooking-progress" role="status"><b>Working at {SPOTS[cooking].name}…</b><div><span/></div></div>:<button className="game-primary" disabled={!!busy||issues.length>0||(!atStation&&!(stations.length===0&&nearSpot(position,'packing')))} onClick={()=>cook(atStation||'packing')}>{atStation?'Prepare at '+SPOTS[atStation].name:stations.length===0?'Get drinks ready':'Walk to a cooking station'}</button>}<small>Station completion is shared across devices. These actions simulate cooking.</small></>}
     {order.status==='packing'&&(nearSpot(position,'packing')?<><h3>Build the right bag.</h3><PackBag key={order.id} {...{order,state,config,act,busy,onBagChange}}/></>:<><p>Food is ready. Carry it to the packing bench and assemble the order.</p><WalkButton id="packing" {...{position,move}}/></>)}
-    {order.delivery&&['ready','out_for_delivery','delivered'].includes(order.status)&&<DeliveryJourney {...{order,act,busy}} clockOffset={live.clockOffset}/>}
+    {order.delivery&&['ready','out_for_delivery','delivered'].includes(order.status)&&<p>Courier status: <b>{STATUS[order.status]}</b>. Use the <a href="#delivery-simulator">main delivery simulator ↑</a> for pickup and the journey to the house.</p>}
     {order.status==='ready'&&!order.delivery&&<><div className="completion-stamp">✓<span>VERIFIED.<br/>READY FOR PICKUP.</span></div><p>The customer collects from their screen.</p><div className="reference-card"><small>MATCH AT HANDOFF</small><b>{order.pickupCode}</b></div><button disabled={!!busy} onClick={()=>act('/orders/'+order.id+'/recheck')}>Reopen bag for a recheck</button></>}
     {order.status==='collected'&&<><div className="completion-stamp">✓<span>PICKUP<br/>CONFIRMED.</span></div><p>The matching bag was collected.</p></>}
     {order.status==='cancelled'&&<p>This unstarted ticket was cancelled. Its stock is available again.</p>}
@@ -330,7 +338,7 @@ function DisplayMission({state,config}) {
   return <aside className="mission-panel"><div className="mission-eyebrow">SPECTATOR / LIVE FEED</div><h2>Every ticket has a journey.</h2><p>Orders, packing failures, pickup, and disruptions sync from the two players.</p><div className="spectator-counts">{Object.entries(STATUS).map(([key,label])=><div key={key}><b>{state.orders.filter(o=>o.status===key).length}</b><span>{label}</span></div>)}</div><h3>Latest events</h3><div className="game-events">{state.events.slice(0,5).map(e=><p key={e.id}>{e.message}</p>)}</div></aside>;
 }
 
-export default function Game({role,state,config,act,busy,live,compact=false}) {
+export default function Game({role,state,config,act,busy,live,compact=false,keyboardActive=true,onActivate}) {
   const [selected,setSelected]=useState(()=>role==='customer'?localStorage.getItem('nova-game-order')||'':new URLSearchParams(location.search).get('order')||localStorage.getItem('nova-game-kitchen-order')||'');
   const presence=usePlayerPresence(role,live,role==='customer'?selected:'');
   const {position,walking,move,step}=useWalk(role,presence.publish);
@@ -342,11 +350,11 @@ export default function Game({role,state,config,act,busy,live,compact=false}) {
   function interactNearby() {
     setInteract(n=>n+1);
     const nearby=(role==='kitchen'?KITCHEN_SPOTS:role==='owner'?['office',...KITCHEN_SPOTS,...CUSTOMER_SPOTS]:CUSTOMER_SPOTS).find(id=>nearSpot(position,id));
-    setInteractionHint(nearby?SPOTS[nearby].name+' reached. Use the action in your mission panel.':'Walk to a marked spot to interact.');
+    setInteractionHint(role==='customer'?'Menu and pickup actions work anywhere. Keep exploring freely.':nearby?SPOTS[nearby].name+' reached. Use the action in your mission panel.':'Walk to a marked spot to interact.');
   }
-  return <section className="game-experience"><div className="game-titlebar"><div><span className="game-kicker">NOVA / RESTAURANT SIMULATOR</span><h1>{role==='customer'?'A lunch run. A live kitchen.':role==='kitchen'?'Take the ticket. Make it happen.':role==='owner'?'Run the shift. Handle the unexpected.':'The whole restaurant, in motion.'}</h1></div><div className="shift-score"><div><b>{active}</b><small>IN PLAY</small></div><div><b>{collected}</b><small>SERVED</small></div><div className={flagged?'score-warning':''}><b>{flagged}</b><small>BAG FLAGS</small></div></div></div>
+  return <section className="game-experience" onPointerDown={onActivate} onFocusCapture={onActivate}><div className="game-titlebar"><div><span className="game-kicker">NOVA / RESTAURANT SIMULATOR</span><h1>{role==='customer'?'A lunch run. A live kitchen.':role==='kitchen'?'Take the ticket. Make it happen.':role==='owner'?'Run the shift. Handle the unexpected.':'The whole restaurant, in motion.'}</h1></div><div className="shift-score"><div><b>{active}</b><small>IN PLAY</small></div><div><b>{collected}</b><small>SERVED</small></div><div className={flagged?'score-warning':''}><b>{flagged}</b><small>BAG FLAGS</small></div></div></div>
     <PageGuide role={role} compact={compact}/>
-    <div className="game-layout"><div className="game-world-column"><Restaurant {...{role,state,config,selected:order,position,walking,move,step,live}} playerId={presence.id} onInteract={interactNearby}/><div className={"presence-indicator "+(live.presenceError?"error":"")}><i className="live-dot"/>{live.presenceError||("Live movement · "+live.players.length+" connected players · syncs across devices")}</div>{interactionHint&&<div className="interaction-hint" role="status">{interactionHint}</div>}
+    <div className="game-layout"><div className="game-world-column"><Restaurant {...{role,state,config,selected:order,position,walking,move,step,live,keyboardActive}} playerId={presence.id} onInteract={interactNearby}/><div className={"presence-indicator "+(live.presenceError?"error":"")}><i className="live-dot"/>{live.presenceError||("Live movement · "+live.players.length+" connected players · syncs across devices")}</div>{interactionHint&&<div className="interaction-hint" role="status">{interactionHint}</div>}
       {role==='kitchen'&&<div className="ticket-strip"><div className="ticket-strip-title"><b>LIVE TICKETS</b><small>Newest first · select an order to play</small></div><div>{[...state.orders].reverse().map(o=><button key={o.id} className={o.id===order?.id?'active-ticket':''} onClick={()=>{setSelected(o.id);localStorage.setItem('nova-game-kitchen-order',o.id);}}><b>{o.id}</b><span>{o.customer}</span><small>{STATUS[o.status]}</small>{o.verification?.status==='red'&&<i>!</i>}</button>)}</div></div>}
       {role!=='kitchen'&&<div className="floor-legend"><span><i className="legend-you"/>Your player</span><span><i className="legend-staff"/>Kitchen team</span><span>● Customers reflect shared order stages</span><small>Player movement, tickets, packing, resources, and courier progress sync across devices.</small></div>}
       {(role==='owner'||role==='display')&&<div className="live-order-lane">{[...state.orders].reverse().slice(0,8).map(o=><div key={o.id}><span>{o.id} · {o.customer}</span><b>{STATUS[o.status]}</b><small>{Object.entries(o.items).map(([sku,n])=>FOOD[sku]+'×'+n).join(' ')}</small></div>)}</div>}
@@ -357,6 +365,5 @@ export default function Game({role,state,config,act,busy,live,compact=false}) {
       {role==='display'&&<DisplayMission {...{state,config}}/>}
     </div>
     {(role==='owner'||role==='display')&&<div className="live-bags">{live.players.filter(p=>p.packing&&state.orders.some(o=>o.id===p.packing.orderId&&o.status==='packing')).map(p=><div className="live-bag-preview" key={p.id}><b>Live packing · {p.packing.orderId}</b><p>{Object.entries(p.packing.counts).filter(([,n])=>n>0).map(([sku,n])=>FOOD[sku]+' ×'+n).join(' · ')||'Empty bag'}</p></div>)}</div>}
-    {(role==='owner'||role==='display')&&<DeliveryBoard {...{state,act,busy}} clockOffset={live.clockOffset} readOnly={role==='display'}/> }
   </section>;
 }

@@ -29,8 +29,13 @@ export function DeliveryJourney({ order, act, busy, clockOffset = 0, readOnly = 
     {trip.stage==='delivered'&&<p className="delivery-confirmation">✓ Received at {d.name}. Confirmation is shared with the kitchen and owner.</p>}
   </section>;
 }
-export function DeliveryBoard({state,act,busy,clockOffset,readOnly=false}) {
+export function DeliveryBoard({state,act,busy,clockOffset,readOnly=false,preferredOrderId=''}) {
+  const [selected,setSelected]=useState('');
   const orders=[...state.orders].reverse().filter(o=>o.delivery&&o.status!=='cancelled');
-  if(!orders.length)return null;
-  return <div className="delivery-board"><h2>Restaurant → customer homes</h2><p>Live courier position, destination, pickup status, and time to arrival.</p>{orders.map(order=><DeliveryJourney key={order.id} {...{order,act,busy,clockOffset,readOnly}}/>)}</div>;
+  useEffect(()=>{if(preferredOrderId)setSelected(preferredOrderId);},[preferredOrderId]);
+  const order=orders.find(o=>o.id===selected)||orders.find(o=>o.id===preferredOrderId)||orders.find(o=>o.status!=='delivered')||orders[0];
+  return <section id="delivery-simulator" aria-label="Delivery simulator" className="delivery-board delivery-main-stage">
+    <div className="delivery-stage-header"><div><small>LIVE DELIVERY STAGE</small><h2>Delivery simulator</h2><p>Restaurant pickup → journey to the house → confirmed delivery.</p></div><span>{orders.length} delivery {orders.length===1?'order':'orders'}</span></div>
+    {orders.length>0?<><div className="delivery-order-tabs" aria-label="Choose delivery order">{orders.map(o=><button key={o.id} className={o.id===order.id?'selected':''} onClick={()=>setSelected(o.id)} aria-pressed={o.id===order.id}>{o.id} · {o.customer}<small>{o.delivery.name}</small></button>)}</div><DeliveryJourney key={order.id} {...{order,act,busy,clockOffset,readOnly}}/></>:<div className="delivery-empty-stage"><span aria-hidden="true">🏪 → 🛵 → 🏡</span><div><b>Your delivery will appear here</b><p>Choose Delivery when ordering. This main stage will show the courier, destination, distance, and ETA. You can keep exploring the restaurant while it updates.</p></div></div>}
+  </section>;
 }
