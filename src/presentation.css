@@ -1,0 +1,254 @@
+.app-header,
+.role-switcher {
+  display: block;
+  padding: 0;
+}
+
+.app-header {
+  background: #1e3a31;
+  border-color: #294b3f;
+  color: #fffdf5;
+}
+
+.app-header-inner,
+.role-switcher-inner {
+  max-width: 1480px;
+  margin-inline: auto;
+  padding-inline: clamp(14px, 2.2vw, 28px);
+}
+
+.app-header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding-block: 12px;
+}
+
+.app-header .brand {
+  gap: 10px;
+}
+
+.app-header .brand b {
+  display: block;
+  line-height: 1.25;
+}
+
+.app-header .brand small {
+  color: #c1d2c2;
+  margin-top: 2px;
+}
+
+.app-header .brand-mark {
+  display: grid;
+  place-items: center;
+  width: 37px;
+  height: 37px;
+  padding: 0;
+  border-radius: 8px;
+  background: #f2c781;
+  color: #263e33;
+  font-size: 21px;
+}
+
+.app-sync {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #c1d2c2;
+  font-size: 12px;
+}
+
+.app-header .connection {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  background: #61392f;
+  color: #ffe5d7;
+  padding: 4px 9px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.app-header .connection::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.app-header .connection.online {
+  background: #365c47;
+  color: #e6f6e2;
+}
+
+.app-sync-version {
+  font-variant-numeric: tabular-nums;
+}
+
+.role-switcher {
+  background: #fffcf4;
+}
+
+.role-switcher-inner {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  padding-block: 6px;
+}
+
+.role-switcher button {
+  display: grid;
+  gap: 2px;
+  min-height: 46px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  text-align: left;
+  line-height: 1.2;
+}
+
+.role-switcher button b {
+  font-size: 13px;
+}
+
+.role-switcher button small {
+  color: #55665a;
+  font-size: 11px;
+}
+
+.role-switcher button[aria-current="page"] {
+  background: #e4eddf;
+  border-color: #8fa887;
+  box-shadow: inset 3px 0 #3e6b50;
+  color: #224e36;
+}
+
+.role-switcher button[aria-current="page"]:hover {
+  background: #dce9d8;
+}
+
+.game-mode-active {
+  padding: clamp(14px, 2.2vw, 28px);
+}
+
+.game-experience .game-titlebar {
+  margin: 0 0 15px;
+}
+
+.game-title-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+}
+
+.game-title-meta a {
+  font-size: 12px;
+  font-weight: 600;
+  text-underline-offset: 2px;
+}
+
+.game-experience .game-kicker,
+.game-experience .mission-eyebrow {
+  color: #526756;
+  font-size: 10px;
+}
+
+.game-experience .shift-score {
+  gap: 6px;
+}
+
+.game-experience .shift-score > div {
+  min-width: 76px;
+  padding: 8px;
+  background: #fffdf6;
+  border: 1px solid #d6dfd0;
+  border-radius: 8px;
+}
+
+.game-experience .shift-score .score-warning {
+  background: #fff1de;
+  border-color: #deb68b;
+  color: #8d4728;
+}
+
+.game-experience .shift-score small {
+  display: block;
+  margin-top: 3px;
+  color: inherit;
+}
+
+.game-experience .page-guide {
+  margin: 16px 0 0;
+}
+
+.game-experience .page-guide summary {
+  padding-block: 10px;
+}
+
+.game-experience .page-guide ol {
+  gap: 10px 18px;
+}
+
+.game-experience .page-guide li p,
+.game-experience .page-guide > p {
+  color: #526656;
+}
+
+.game-experience .page-guide summary:focus-visible {
+  outline: 3px solid #4b795b;
+  outline-offset: 2px;
+}
+
+.game-experience .room-topline {
+  font-size: 10px;
+}
+
+.game-experience .room-bottomline,
+.game-experience .ticket-strip-title small {
+  color: #526656;
+}
+
+.game-experience .mission-panel {
+  border-color: #cbd7c8;
+}
+
+.game-experience .mission-panel > p,
+.game-experience .challenge-grid small {
+  color: #526656;
+}
+
+.game-experience .mission-panel .game-primary {
+  min-height: 42px;
+  font-size: 13px;
+}
+
+@media (max-width: 620px) {
+  .app-sync-label,
+  .app-sync-version,
+  .role-switcher button small {
+    display: none;
+  }
+
+  .role-switcher-inner {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .role-switcher button {
+    grid-column: span 2;
+    min-height: 40px;
+    place-content: center;
+    text-align: center;
+    padding-inline: 6px;
+  }
+
+  .role-switcher button:nth-last-child(-n+2) {
+    grid-column: span 3;
+  }
+
+  .game-experience .shift-score {
+    flex-wrap: wrap;
+  }
+}

@@ -191,7 +191,7 @@ const GUIDES = {
 };
 function PageGuide({ role, compact = false }) {
   const guide = GUIDES[role];
-  return <details className="page-guide" open={!compact}>
+  return <details id={`view-guide-${role}`} className="page-guide" open={!compact}>
     <summary>How this page works · {guide.name}<span aria-hidden="true">Collapse guide ↑</span></summary>
     <p>{guide.intro}</p>
     <ol>{guide.steps.map(([title, text]) => <li key={title}><b>{title}</b><p>{text}</p></li>)}</ol>
@@ -344,8 +344,21 @@ export default function Game({role,state,config,act,busy,live,compact=false}) {
     const nearby=(role==='kitchen'?KITCHEN_SPOTS:role==='owner'?['office',...KITCHEN_SPOTS,...CUSTOMER_SPOTS]:CUSTOMER_SPOTS).find(id=>nearSpot(position,id));
     setInteractionHint(nearby?SPOTS[nearby].name+' reached. Use the action in your mission panel.':'Walk to a marked spot to interact.');
   }
-  return <section className="game-experience"><div className="game-titlebar"><div><span className="game-kicker">NOVA / RESTAURANT SIMULATOR</span><h1>{role==='customer'?'A lunch run. A live kitchen.':role==='kitchen'?'Take the ticket. Make it happen.':role==='owner'?'Run the shift. Handle the unexpected.':'The whole restaurant, in motion.'}</h1></div><div className="shift-score"><div><b>{active}</b><small>IN PLAY</small></div><div><b>{collected}</b><small>SERVED</small></div><div className={flagged?'score-warning':''}><b>{flagged}</b><small>BAG FLAGS</small></div></div></div>
-    <PageGuide role={role} compact={compact}/>
+  return <section className="game-experience">
+    <div className="game-titlebar">
+      <div>
+        <div className="game-title-meta">
+          <span className="game-kicker">NOVA / RESTAURANT SIMULATOR</span>
+          <a href={`#view-guide-${role}`}>View guide ↓</a>
+        </div>
+        <h1>{role==='customer'?'A lunch run. A live kitchen.':role==='kitchen'?'Take the ticket. Make it happen.':role==='owner'?'Run the shift. Handle the unexpected.':'The whole restaurant, in motion.'}</h1>
+      </div>
+      <div className="shift-score">
+        <div><b>{active}</b><small>IN PLAY</small></div>
+        <div><b>{collected}</b><small>SERVED</small></div>
+        <div className={flagged?'score-warning':''}><b>{flagged}</b><small>BAG FLAGS</small></div>
+      </div>
+    </div>
     <div className="game-layout"><div className="game-world-column"><Restaurant {...{role,state,config,selected:order,position,walking,move,step,live}} playerId={presence.id} onInteract={interactNearby}/><div className={"presence-indicator "+(live.presenceError?"error":"")}><i className="live-dot"/>{live.presenceError||("Live movement · "+live.players.length+" connected players · syncs across devices")}</div>{interactionHint&&<div className="interaction-hint" role="status">{interactionHint}</div>}
       {role==='kitchen'&&<div className="ticket-strip"><div className="ticket-strip-title"><b>LIVE TICKETS</b><small>Newest first · select an order to play</small></div><div>{[...state.orders].reverse().map(o=><button key={o.id} className={o.id===order?.id?'active-ticket':''} onClick={()=>{setSelected(o.id);localStorage.setItem('nova-game-kitchen-order',o.id);}}><b>{o.id}</b><span>{o.customer}</span><small>{STATUS[o.status]}</small>{o.verification?.status==='red'&&<i>!</i>}</button>)}</div></div>}
       {role!=='kitchen'&&<div className="floor-legend"><span><i className="legend-you"/>Your player</span><span><i className="legend-staff"/>Kitchen team</span><span>● Customers reflect shared order stages</span><small>Player movement, tickets, packing, resources, and courier progress sync across devices.</small></div>}
@@ -358,5 +371,6 @@ export default function Game({role,state,config,act,busy,live,compact=false}) {
     </div>
     {(role==='owner'||role==='display')&&<div className="live-bags">{live.players.filter(p=>p.packing&&state.orders.some(o=>o.id===p.packing.orderId&&o.status==='packing')).map(p=><div className="live-bag-preview" key={p.id}><b>Live packing · {p.packing.orderId}</b><p>{Object.entries(p.packing.counts).filter(([,n])=>n>0).map(([sku,n])=>FOOD[sku]+' ×'+n).join(' · ')||'Empty bag'}</p></div>)}</div>}
     {(role==='owner'||role==='display')&&<DeliveryBoard {...{state,act,busy}} clockOffset={live.clockOffset} readOnly={role==='display'}/> }
+    <PageGuide role={role} compact={compact}/>
   </section>;
 }
