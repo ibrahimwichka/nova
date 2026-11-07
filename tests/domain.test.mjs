@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { initialState, snapshot, disrupt, comparePacking, demoObservation, recordVerification, readyOrder, collectOrder, prepareOrder, finishPreparation } from '../server/domain.mjs';
+import { snapshot, disrupt, comparePacking, demoObservation, recordVerification, readyOrder, collectOrder, prepareOrder, finishPreparation } from '../server/domain.mjs';
+import { sampleState as initialState } from './fixtures.mjs';
 import { simulate, compareScenario } from '../server/simulation.mjs';
 
 test('recovery covers a missing worker without violating worker/station capacity', () => {

@@ -36,7 +36,7 @@ async function api(req, res, pathname) {
   if (req.headers['sec-fetch-site'] === 'cross-site') fail('Cross-site changes are not supported.', 403);
   const input = await body(req);
   if (pathname === '/api/reset') {
-    await update(next => { const library = next.scenarios; const fresh = initialState(); Object.assign(next, fresh); next.scenarios = library; event(next, 'Restaurant reset. Saved scenarios are preserved.'); });
+    await update(next => { const library = next.scenarios; const fresh = initialState(); Object.assign(next, fresh); next.scenarios = library; event(next, 'Restaurant reset to zero orders. Saved scenarios are preserved.'); });
     return json(res, 200, payload());
   }
   if (pathname === '/api/resources') {

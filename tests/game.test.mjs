@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CUSTOMER_SPOTS, KITCHEN_SPOTS, SPOTS, walkable, findPath } from '../src/game-logic.mjs';
 import { initialState, prepareOrder, completeGameStation } from '../server/domain.mjs';
+import { sampleState } from './fixtures.mjs';
 import { createApi } from '../server/api.mjs';
 
 test('every player destination is reachable without crossing furniture or the kitchen divider', () => {
@@ -25,7 +26,7 @@ test('every player destination is reachable without crossing furniture or the ki
 });
 
 test('game preparation requires every needed station and rejects duplicates, irrelevant work, and unavailable capacity', () => {
-  const state = initialState(), id = 'N103';
+  const state = sampleState(), id = 'N103';
   assert.throws(()=>completeGameStation(state,id,'grill'));
   prepareOrder(state,id);
   assert.throws(()=>completeGameStation(state,id,'prep'));

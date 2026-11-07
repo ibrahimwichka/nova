@@ -219,4 +219,19 @@ to{transform:scale(1);opacity:1}
 .person.walking .person-body,.floor-spot.near ellipse,.steam,.waiting-dot,.bag-items button{animation:none}
 .challenge-grid button{transition:none}
 }
-
+.page-guide{background:#fffdf6;border:1px solid #d8dfce;border-radius:10px;padding:0 20px;margin:0 0 22px}
+.page-guide summary{display:flex;justify-content:space-between;gap:12px;padding:14px 0;font-size:13px;color:#385f4e}
+.page-guide summary:before{content:'▸';margin-right:0}
+.page-guide[open] summary:before{content:'▾'}
+.page-guide summary>span{margin-left:auto;font-size:10px;font-weight:400;color:#8d9c80}
+.page-guide:not([open]) summary>span{font-size:0}
+.page-guide:not([open]) summary>span:after{content:'Expand guide ↓';font-size:10px}
+.page-guide>p{font-size:12px;color:#76866e;margin:0 0 14px}
+.page-guide ol{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;padding:0;list-style:none;counter-reset:guide-step;margin:14px 0}
+.page-guide li{counter-increment:guide-step;font-size:12px}
+.page-guide li>b{display:block;color:#476b54;font-size:12px}
+.page-guide li>b:before{content:counter(guide-step) '. ';color:#b08b52}
+.page-guide li p{font-size:11px;line-height:1.6;color:#89957c;margin:8px 0}
+.page-guide>p.guide-note{border-top:1px solid #e4e8da;padding-top:12px;font-size:10px;line-height:1.5}
+@media(max-width:1000px){.page-guide ol{grid-template-columns:1fr 1fr;gap:8px 20px}}
+@media(max-width:600px){.page-guide{padding:0 16px}.page-guide ol{grid-template-columns:1fr}.page-guide summary>span{display:none}}

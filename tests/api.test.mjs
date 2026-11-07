@@ -12,6 +12,17 @@ function service() {
   }
   return { owner, customer, call };
 }
+test('a fresh restaurant and reset both have zero orders; refresh preserves customer orders', async () => {
+  const { owner, customer, call } = service();
+  assert.deepEqual((await call(customer, '/state')).body.state.orders, []);
+  const placed = await call(customer, '/orders', { customer: 'First guest', items: { sprite: 1 } });
+  assert.equal(placed.status, 201);
+  assert.equal((await call(owner, '/state')).body.state.orders.length, 1);
+  const reset = await call(owner, '/reset', {});
+  assert.deepEqual(reset.body.state.orders, []);
+  assert.equal(reset.body.state.playback, null);
+  assert.deepEqual((await call(customer, '/state')).body.state.orders, []);
+});
 test('two clients share the full order -> preparation -> packing -> pickup flow', async () => {
   const { owner, customer, call } = service();
   const placed = await call(customer, '/orders', { customer: 'Two-device test', items: { burger: 1, fries: 1, sprite: 1 } });

@@ -4,6 +4,8 @@ No purchases, phones, or cameras are required for the first five tests. On the h
 
 ## Start with the game
 
+The restaurant starts with zero orders. Each page explains its own controls in **How this page works**. Reset clears live orders; refreshing keeps them.
+
 1. Mac 1 opens Kitchen and Owner in separate tabs. Mac 2 opens Customer. Refresh existing tabs after deployment.
 2. Customer clicks **Walk to Order counter**, or clicks the counter marker on the floor. Click **Open menu** or press **E** while the room is focused.
 3. Enter a name, adjust the menu with +/−, and place a burger/fries/Sprite order. Keep its C… ticket number. The player walks to the waiting area.
@@ -33,9 +35,9 @@ The original dashboard tests below are available through **Detailed controls & o
 
 ## 2. Recover from a worker absence
 
-1. Owner resets the restaurant.
-2. Keep the default Fryer worker absent scenario and compare.
-3. The seeded scenario should complete more orders with qualified cross-station coverage than with fixed assignments.
+1. Owner resets the restaurant; verify zero orders in all views.
+2. Place a burger/fries order from Customer. Keep the default Fryer worker absent scenario in Detailed controls and compare.
+3. Fixed assignments should leave the fries order blocked; qualified cross-station recovery should complete it in the simulation.
 4. Apply the drill. Leo becomes unavailable in Owner and Demo.
 5. Inspect coverage and tradeoffs. It is a simulated plan, not automatic physical staff movement.
 

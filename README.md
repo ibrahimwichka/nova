@@ -4,6 +4,10 @@ A playable hackathon prototype for testing how orders, shortages, staffing, pack
 
 ## Hosted testing
 
+New and reset restaurants start with **zero orders**. Orders appear only when a customer places one or you explicitly apply a rush challenge. Refreshing preserves the shared restaurant; use **Reset for another round** to clear live tickets and restore resources. Saved drills remain available and can restore their recorded snapshots when explicitly restarted.
+
+Every view has an expanded **How this page works** guide with its role, steps, controls, and explanation of what syncs. Collapse it once you know the flow.
+
 Open the deployed site on both Macs. All views share one persisted restaurant and sync about every 1.5 seconds:
 
 - `/?view=owner`: overlook the restaurant floor, choose challenge cards, and play fixed versus recovery plans.

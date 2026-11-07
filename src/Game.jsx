@@ -126,6 +126,62 @@ function Steps({ labels, current }) { return <ol className="game-steps">{labels.
 function WalkButton({ id, position, move, children }) { return <button className="walk-button" onClick={() => move(SPOTS[id])}>{nearSpot(position,id) ? '↗ ' : '⌖ '}{children || 'Walk to ' + SPOTS[id].name}</button>; }
 function Receipt({ order, config }) { return <div className="game-receipt">{Object.entries(order.items).map(([sku,n]) => <div key={sku}><span>{FOOD[sku]} {config.catalog[sku].name}</span><b>×{n}</b></div>)}</div>; }
 
+const GUIDES = {
+  customer: {
+    name: 'Customer',
+    intro: 'You are the guest. Place an order here while the person on the other Mac plays Kitchen.',
+    steps: [
+      ['Walk in & order', 'Click Walk to Order counter, then Open menu. Enter your name, use +/− to choose quantities, and place the order. No payment is taken.'],
+      ['Wait for the kitchen', 'Your ticket appears on the other Mac. Its player must cook and pack it. Your status updates automatically; a missing item keeps the bag in the kitchen.'],
+      ['Collect the right bag', 'When ready, walk to Pickup counter and choose Show reference & collect bag. Your order-specific reference confirms the handoff.'],
+      ['Leave or play again', 'Walk to Exit and leave. Choose Play another order for a new visit. Refreshing the page keeps your current ticket.'],
+    ],
+    note: 'Click the floor or destination markers to walk. Focus the room to use WASD/arrows; E interacts nearby. You cannot walk through tables or into the kitchen.',
+  },
+  kitchen: {
+    name: 'Kitchen',
+    intro: 'You prepare the customer’s order. If there are no tickets, ask the other Mac to place the first order in Customer.',
+    steps: [
+      ['Choose & accept a ticket', 'Select a ticket below the room. Walk to Order tickets, then Accept ticket & start cooking. Ingredients are reserved once; shortages can block this step.'],
+      ['Visit the cooking stations', 'Walk to each required station and choose Prepare. Stay there for the two-second game task. Checkmarks show saved progress. Drinks-only orders use Packing.'],
+      ['Pack & check every item', 'At Packing bench, tap shelf items to add them; tap bag items to remove them. Check game bag reports missing or extra items. Fix the bag and check again.'],
+      ['Seal & hand off', 'After a matching check, tick the confirmation and seal the bag. The customer collects from their screen. Reopen bag if a fresh check is needed.'],
+    ],
+    note: 'Walking is local to this tab; tickets, completed station tasks, checks, and pickup sync across Macs. Detailed controls below include manual counts and the optional camera.',
+  },
+  owner: {
+    name: 'Owner',
+    intro: 'Oversee the shared restaurant and test disruptions. The restaurant starts empty; place customer orders first, or explicitly choose a Lunch rush challenge.',
+    steps: [
+      ['Watch the live shift', 'The floor, ticket cards, and counters reflect customer orders and kitchen progress. IN PLAY counts active tickets; SERVED counts collected orders; BAG FLAGS counts unresolved mismatches.'],
+      ['Choose a challenge', 'Worker absence, missing chicken, or broken equipment tests the current tickets. Lunch rush adds six simulated tickets to the comparison. Fixed uses normal assignments; Recovery uses qualified cover.'],
+      ['Preview, then apply', 'Play Fixed or Recovery to show a separate simulation on Owner and Demo screen. Live tickets stay unchanged. Apply challenge changes the shared kitchen; compare again if it has changed.'],
+      ['Resolve or reset', 'Use Detailed controls for staff, equipment, stock, AI explanations, and saved drills. Reset for another round clears live orders and restores resources on both Macs.'],
+    ],
+    note: 'Refresh preserves the shared restaurant. Reset returns it to zero orders and keeps saved drills. Saved-drill restarts restore their old snapshots; unavailable stock or equipment may still leave orders blocked.',
+  },
+  display: {
+    name: 'Demo screen',
+    intro: 'This is a read-only spectator view. Keep it open in a spare window while the two players use Customer and Kitchen.',
+    steps: [
+      ['Start with the players', 'Zero orders means no one has ordered yet. Open Customer on one Mac and Kitchen on the other; no automatic sample tickets appear.'],
+      ['Follow each stage', 'Watch tickets move from received to cooking, bag check, pickup, and collected. Customer figures reflect order stages; faded staff are absent.'],
+      ['Read flags & events', 'The live counters and event feed show packing problems, resource changes, and confirmed pickup. The latest ticket cards show what was ordered.'],
+      ['Watch a replay', 'Owner starts Fixed or Recovery playback. The floor shows simulated time and station assignments; live ticket counts remain live. Owner stops replay to return to the live floor.'],
+    ],
+    note: 'This page cannot advance orders. The players control the live flow; replay is a separate prediction and does not cook or collect their orders.',
+  },
+};
+function PageGuide({ role }) {
+  const guide = GUIDES[role];
+  return <details className="page-guide" open>
+    <summary>How this page works · {guide.name}<span>Collapse guide ↑</span></summary>
+    <p>{guide.intro}</p>
+    <ol>{guide.steps.map(([title, text]) => <li key={title}><b>{title}</b><p>{text}</p></li>)}</ol>
+    <p className="guide-note">{guide.note}</p>
+  </details>;
+}
+
 function CustomerMission({ state, config, act, busy, position, move, selected, setSelected, interact, setInteract }) {
   const [name, setName] = useState(() => localStorage.getItem('nova-game-name') || 'Demo guest');
   const [cart, setCart] = useState({ burger: 1, fries: 1, sprite: 1, wrap: 0 });
@@ -133,6 +189,7 @@ function CustomerMission({ state, config, act, busy, position, move, selected, s
   const order = state.orders.find(o => o.id === selected);
   const atCounter = nearSpot(position,'counter'), atPickup = nearSpot(position,'pickup'), atExit = nearSpot(position,'exit');
   const issues = orderProblems(order,state,config);
+  useEffect(() => { if (!order) { setLeft(false); setMenuOpen(false); } }, [order?.id]);
   useEffect(() => { if (!atCounter) setMenuOpen(false); }, [atCounter]);
   useEffect(() => {
     if (!interact) return;
@@ -191,7 +248,7 @@ function KitchenMission({state,config,act,busy,position,move,order,interact,setI
       else if(!required.length&&nearSpot(position,'packing'))cook('packing');
     }
   },[interact]);
-  if(!order) return <aside className="mission-panel"><h2>No tickets yet.</h2><p>Ask the customer player to place an order.</p></aside>;
+  if(!order) return <aside className="mission-panel"><div className="mission-eyebrow">PLAYER 02 / KITCHEN</div><h2>No tickets yet.</h2><p>The restaurant starts with zero orders. Ask the other Mac to open Customer, walk to the counter, and place the first order.</p><p>It will appear in the ticket strip below the room. Select it, accept it at Order tickets, then follow the cooking and packing steps.</p><a href="/?view=customer" target="_blank" rel="noreferrer">Open Customer in another tab ↗</a></aside>;
   const stations=requiredStations(order,config.catalog), done=order.gameStations || [];
   const remaining=stations.filter(id=>!done.includes(id));
   const atStation=remaining.find(id=>nearSpot(position,id));
@@ -218,10 +275,10 @@ function KitchenMission({state,config,act,busy,position,move,order,interact,setI
 function OwnerMission({state,act,busy}) {
   const [running,setRunning]=useState('');
   const [selected,setSelected]=useState('');
-  const scenario=state.scenarios.find(s=>s.id===selected)||state.scenarios[0];
+  const scenario=state.scenarios.find(s=>s.id===selected)||(state.orders.length ? state.scenarios[0] : undefined);
   const challenges=[{name:'One worker down',icon:'👨‍🍳',detail:'Leo cannot make the shift',changes:{absentWorker:'leo'}},{name:'No chicken today',icon:'📦',detail:'An ingredient delivery is missing',changes:{shortage:'chicken'}},{name:'Lunch rush',icon:'⚡',detail:'Six more tickets arrive at once',changes:{rush:true}},{name:'Fryer breakdown',icon:'🔧',detail:'A station goes offline',changes:{equipmentDown:'fryer'}}];
   async function challenge(c) {setRunning(c.name);const r=await act('/scenarios',{name:c.name,changes:c.changes},'Comparing recovery strategies…');if(r)setSelected(r.scenarioId);setRunning('');}
-  return <aside className="mission-panel owner-mission"><div className="mission-eyebrow">MISSION CONTROL / OWNER</div><h2>Keep the kitchen moving.</h2><p>Watch live tickets on the floor, or choose a challenge and compare how the team recovers.</p><div className="challenge-grid">{challenges.map(c=><button key={c.name} disabled={!!busy||!!running} onClick={()=>challenge(c)}><span>{c.icon}</span><b>{c.name}</b><small>{c.detail}</small></button>)}</div>{scenario&&<div className="challenge-result"><small>SELECTED CHALLENGE</small><select aria-label="Game saved challenge" value={scenario.id} onChange={e=>setSelected(e.target.value)}>{state.scenarios.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select><div className="score-comparison"><div><small>FIXED PLAN</small><b>{scenario.comparison.baseline.metrics.completed}<span>/{scenario.comparison.baseline.metrics.total}</span></b><small>orders completed</small></div><div><small>RECOVERY</small><b>{scenario.comparison.recovery.metrics.completed}<span>/{scenario.comparison.recovery.metrics.total}</span></b><small>orders completed</small></div></div><div className="row"><button disabled={!!busy} onClick={()=>act('/playback',{scenarioId:scenario.id,policy:'fixed'})}>▶ Fixed</button><button className="game-primary" disabled={!!busy} onClick={()=>act('/playback',{scenarioId:scenario.id,policy:'adaptive'})}>▶ Recovery</button></div><button className="walk-button" disabled={!!busy||scenario.snapshot.version!==state.version} onClick={()=>act('/scenarios/'+scenario.id+'/apply')}>Apply challenge to live kitchen</button>{scenario.snapshot.version!==state.version&&<small>Live kitchen changed. Choose a challenge again to compare a fresh snapshot.</small>}<small>Replay previews a separate 60-minute simulation; live tickets stay unchanged.</small></div>}{state.playback&&<button onClick={()=>act('/playback',{action:'stop'})}>Stop replay / show live floor</button>}<details><summary>Reset for another round</summary><p>This resets live tickets and resources on both Macs. Saved challenges remain.</p><button className="danger" disabled={!!busy} onClick={()=>act('/reset')}>Reset demo restaurant</button></details></aside>;
+  return <aside className="mission-panel owner-mission"><div className="mission-eyebrow">MISSION CONTROL / OWNER</div><h2>Keep the kitchen moving.</h2><p>Watch live tickets on the floor, or choose a challenge and compare how the team recovers.</p><div className="challenge-grid">{challenges.map(c=><button key={c.name} disabled={!!busy||!!running} onClick={()=>challenge(c)}><span>{c.icon}</span><b>{c.name}</b><small>{c.detail}</small></button>)}</div>{scenario&&<div className="challenge-result"><small>SELECTED CHALLENGE</small><select aria-label="Game saved challenge" value={scenario.id} onChange={e=>setSelected(e.target.value)}>{state.scenarios.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select><div className="score-comparison"><div><small>FIXED PLAN</small><b>{scenario.comparison.baseline.metrics.completed}<span>/{scenario.comparison.baseline.metrics.total}</span></b><small>orders completed</small></div><div><small>RECOVERY</small><b>{scenario.comparison.recovery.metrics.completed}<span>/{scenario.comparison.recovery.metrics.total}</span></b><small>orders completed</small></div></div><div className="row"><button disabled={!!busy} onClick={()=>act('/playback',{scenarioId:scenario.id,policy:'fixed'})}>▶ Fixed</button><button className="game-primary" disabled={!!busy} onClick={()=>act('/playback',{scenarioId:scenario.id,policy:'adaptive'})}>▶ Recovery</button></div><button className="walk-button" disabled={!!busy||scenario.snapshot.version!==state.version} onClick={()=>act('/scenarios/'+scenario.id+'/apply')}>Apply challenge to live kitchen</button>{scenario.snapshot.version!==state.version&&<small>Live kitchen changed. Choose a challenge again to compare a fresh snapshot.</small>}<small>Replay previews a separate 60-minute simulation; live tickets stay unchanged.</small></div>}{state.playback&&<button onClick={()=>act('/playback',{action:'stop'})}>Stop replay / show live floor</button>}<details><summary>Reset for another round</summary><p>This clears all live tickets and restores resources on both Macs. You start again with zero orders. Saved challenges remain.</p><button className="danger" disabled={!!busy} onClick={async()=>{const r=await act('/reset');if(r)setSelected('');}}>Reset demo restaurant</button></details></aside>;
 }
 
 function DisplayMission({state,config}) {
@@ -242,6 +299,7 @@ export default function Game({role,state,config,act,busy}) {
     setInteractionHint(nearby?SPOTS[nearby].name+' reached. Use the action in your mission panel.':'Walk to a marked spot to interact.');
   }
   return <section className="game-experience"><div className="game-titlebar"><div><span className="game-kicker">NOVA / RESTAURANT SIMULATOR</span><h1>{role==='customer'?'A lunch run. A live kitchen.':role==='kitchen'?'Take the ticket. Make it happen.':role==='owner'?'Run the shift. Handle the unexpected.':'The whole restaurant, in motion.'}</h1></div><div className="shift-score"><div><b>{active}</b><small>IN PLAY</small></div><div><b>{collected}</b><small>SERVED</small></div><div className={flagged?'score-warning':''}><b>{flagged}</b><small>BAG FLAGS</small></div></div></div>
+    <PageGuide role={role}/>
     <div className="game-layout"><div className="game-world-column"><Restaurant {...{role,state,config,selected:order,position,walking,move,step}} onInteract={interactNearby}/>{interactionHint&&<div className="interaction-hint" role="status">{interactionHint}</div>}
       {role==='kitchen'&&<div className="ticket-strip"><div className="ticket-strip-title"><b>LIVE TICKETS</b><small>Newest first · select an order to play</small></div><div>{[...state.orders].reverse().map(o=><button key={o.id} className={o.id===order?.id?'active-ticket':''} onClick={()=>{setSelected(o.id);localStorage.setItem('nova-game-kitchen-order',o.id);}}><b>{o.id}</b><span>{o.customer}</span><small>{STATUS[o.status]}</small>{o.verification?.status==='red'&&<i>!</i>}</button>)}</div></div>}
       {role!=='kitchen'&&<div className="floor-legend"><span><i className="legend-you"/>Your player</span><span><i className="legend-staff"/>Kitchen team</span><span>● Customers reflect shared order stages</span><small>Movement is local. Tickets, packing, resources, and replays sync across devices.</small></div>}
