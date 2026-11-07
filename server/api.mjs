@@ -1,5 +1,6 @@
 import { CATALOG, INGREDIENTS, clone, initialState, snapshot, fail, event, validateChanges, disrupt, demoObservation, recordVerification, readyOrder, collectOrder, prepareOrder, finishPreparation, completeGameStation, makeDelivery, confirmDelivery } from './domain.mjs';
 import { availableInventory, stockIssue } from '../shared/stock.mjs';
+import { controlPlayback } from '../shared/replay.mjs';
 import { HOMES } from '../shared/delivery.mjs';
 import { validatePresence } from './presence.mjs';
 import { simulate, compareScenario } from './simulation.mjs';
@@ -184,10 +185,14 @@ async function api(req, res, pathname) {
   }
   if (pathname === '/api/playback') {
     if (input.action === 'stop') await update(next => { next.playback = null; }, false);
-    else {
+    else if (input.action) {
+      let controlled;
+      try { controlled = controlPlayback(state.playback, input); } catch (error) { fail(error.message); }
+      await update(next => { next.playback = controlled; }, false);
+    } else {
       if (!state.scenarios.some(s => s.id === input.scenarioId)) fail('Choose a saved scenario first.');
       if (!['fixed', 'adaptive'].includes(input.policy)) fail('Choose a comparison policy.');
-      await update(next => { next.playback = { scenarioId: input.scenarioId, policy: input.policy, startedAt: Date.now(), speed: 2 }; }, false);
+      await update(next => { next.playback = { scenarioId: input.scenarioId, policy: input.policy, startedAt: Date.now(), speed: 2, position: 0, paused: false }; }, false);
     }
     return json(res, 200, payload());
   }
