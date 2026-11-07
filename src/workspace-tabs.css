@@ -1,0 +1,26 @@
+.workspace-tabs{position:sticky;top:0;z-index:15;display:flex;align-items:center;gap:5px;overflow-x:auto;padding:10px;margin:0 0 20px;border:1px solid #d9dfd4;border-radius:10px;background:#f9faf5;box-shadow:0 3px 12px #20372a08;scrollbar-width:thin}
+.workspace-tabs [role=tab]{flex:none;display:inline-flex;align-items:center;gap:7px;border:0;border-radius:7px;background:transparent;padding:10px 15px;color:#587062;font-size:13px;font-weight:650;white-space:nowrap}
+.workspace-tabs [role=tab]:hover{background:#eaf0e5;color:#254a3a}
+.workspace-tabs [role=tab][aria-selected=true]{background:#2e5846;color:#fff9e9;box-shadow:0 2px 5px #17382a1c}
+.workspace-tabs [role=tab]:focus-visible{outline:3px solid #d5ab69;outline-offset:1px}
+.workspace-tab-count{border-radius:99px;min-width:20px;padding:2px 6px;background:#aa5a38;color:#fff;font-size:10px}
+.workspace-panel{min-width:0;scroll-margin-top:80px;outline:none}
+.workspace-panel[hidden],.operations-center [hidden],.workspace-extra[hidden]{display:none!important}
+.workspace-panel>.operations-center{margin-top:0}
+.workspace-panel>.game-experience{margin-top:0}
+.workspace-panel .game-layout.overview-layout{grid-template-columns:minmax(0,1fr)}
+.workspace-panel>.owner-mission{margin:0 0 20px}
+.workspace-advanced{margin:20px 0;border:1px solid #dbe2d4;border-radius:9px;padding:0 18px;background:#fcfdf8}
+.workspace-advanced>summary{font-size:13px;font-weight:650;color:#496854;padding:16px 0;cursor:pointer}
+.workspace-advanced>.panel{margin:0 0 16px}
+.workspace-panel .operations-center.is-categorized{display:flex;flex-direction:column}
+.operations-center.is-categorized>.ops-title{order:0}
+.operations-center.is-categorized>.ops-alerts{order:1}
+.operations-center.is-categorized>.ops-stock-wrapper{order:2}
+.operations-center.is-categorized>.ops-ai-wrapper{order:3}
+.operations-center.is-categorized>.ops-receipt-wrapper{order:4}
+.operations-center.is-categorized .ops-grid{grid-template-columns:minmax(0,1fr);margin:0}
+.operations-center.is-categorized .ops-card>p{max-width:95ch}
+.workspace-empty{padding:30px;background:#f6f8ef;border:1px dashed #c5d2bc;border-radius:10px;color:#54715b}
+.workspace-panel .delivery-main-stage{margin-top:0}
+@media(max-width:600px){.workspace-tabs{padding:7px;gap:2px;margin-bottom:15px;border-radius:8px}.workspace-tabs [role=tab]{font-size:12px;padding:10px 12px}.workspace-advanced{padding:0 12px}}

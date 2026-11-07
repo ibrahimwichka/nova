@@ -199,7 +199,7 @@ const GUIDES = {
       ['Pack & check every item', 'At Packing bench, tap shelf items to add them; tap bag items to remove them. Check game bag reports missing or extra items. Fix the bag and check again.'],
       ['Seal & hand off', 'After a matching check, confirm and seal. A delivery courier approaches and collects with the matching reference, then travels to the house. The customer confirms receipt at the door.'],
     ],
-    note: 'Walking is shared across devices, along with tickets, station tasks, bag checks, and courier progress. Open AI camera packing check at the bag bench for an iPhone photo. The AI operations section below suggests preparation order and flags ingredients to restock.',
+    note: 'Walking is shared across devices, along with tickets, station tasks, bag checks, and courier progress. Open AI camera packing check at the bag bench for an iPhone photo. Use the Prep tab for AI priorities, Inventory for restock requests, and Packing & camera to upload a tray photo.',
   },
   owner: {
     name: 'Owner',
@@ -208,7 +208,7 @@ const GUIDES = {
       ['Watch the live shift', 'The floor, ticket cards, and counters reflect customer orders and kitchen progress. IN PLAY counts active tickets; SERVED counts completed pickups and deliveries; BAG FLAGS counts unresolved mismatches.'],
       ['Choose a challenge', 'Worker absence, missing chicken, or broken equipment tests the current tickets. Lunch rush adds six simulated tickets to the comparison. Fixed uses normal assignments; Recovery uses qualified cover.'],
       ['Preview, then apply', 'Play Fixed or Recovery to show a separate simulation on Owner and Demo screen. Live tickets stay unchanged. Apply challenge changes the shared kitchen; compare again if it has changed.'],
-      ['Resolve or reset', 'Use Detailed controls for staff, equipment, stock, AI explanations, and saved drills. Reset for another round clears live orders and restores resources on both Macs.'],
+      ['Resolve or reset', 'Use Team for staff and equipment, Inventory for stock, Finances for receipts, and Scenarios for saved drills. Reset for another round clears live orders and restores resources on both Macs.'],
     ],
     note: 'Refresh preserves the shared restaurant. Reset returns it to zero orders and keeps saved drills. Saved-drill restarts restore their old snapshots; unavailable stock or equipment may still leave orders blocked.',
   },
@@ -350,7 +350,7 @@ function KitchenMission({state,config,act,busy,position,move,order,interact,setI
   </aside>;
 }
 
-function OwnerMission({state,act,busy}) {
+export function OwnerMission({state,act,busy}) {
   const [running,setRunning]=useState('');
   const [selected,setSelected]=useState('');
   const scenario=state.scenarios.find(s=>s.id===selected)||(state.orders.length ? state.scenarios[0] : undefined);
@@ -363,7 +363,7 @@ function DisplayMission({state,config}) {
   return <aside className="mission-panel"><div className="mission-eyebrow">SPECTATOR / LIVE FEED</div><h2>Every ticket has a journey.</h2><p>Orders, packing failures, pickup, and disruptions sync from the two players.</p><div className="spectator-counts">{Object.entries(STATUS).map(([key,label])=><div key={key}><b>{state.orders.filter(o=>o.status===key).length}</b><span>{label}</span></div>)}</div><h3>Latest events</h3><div className="game-events">{state.events.slice(0,5).map(e=><p key={e.id}>{e.message}</p>)}</div></aside>;
 }
 
-export default function Game({role,state,config,act,busy,live,compact=false,keyboardActive=true,onActivate}) {
+export default function Game({role,state,config,act,busy,live,compact=false,keyboardActive=true,onActivate,showOwnerControls=true}) {
   const [selected,setSelected]=useState(()=>role==='customer'?localStorage.getItem('nova-game-order')||'':new URLSearchParams(location.search).get('order')||localStorage.getItem('nova-game-kitchen-order')||'');
   const presence=usePlayerPresence(role,live,role==='customer'?selected:'');
   const {position,walking,move,step}=useWalk(role,presence.publish);
@@ -393,14 +393,14 @@ export default function Game({role,state,config,act,busy,live,compact=false,keyb
         <div className={flagged?'score-warning':''}><b>{flagged}</b><small>BAG FLAGS</small></div>
       </div>
     </div>
-    <div className="game-layout"><div className="game-world-column"><Restaurant {...{role,state,config,selected:order,position,walking,move,step,live,keyboardActive}} playerId={presence.id} onInteract={interactNearby}/><div className={"presence-indicator "+(live.presenceError?"error":"")}><i className="live-dot"/>{live.presenceError||("Live movement · "+live.players.length+" connected players · syncs across devices")}</div>{interactionHint&&<div className="interaction-hint" role="status">{interactionHint}</div>}
+    <div className={'game-layout' + (role==='owner'&&!showOwnerControls?' overview-layout':'')}><div className="game-world-column"><Restaurant {...{role,state,config,selected:order,position,walking,move,step,live,keyboardActive}} playerId={presence.id} onInteract={interactNearby}/><div className={"presence-indicator "+(live.presenceError?"error":"")}><i className="live-dot"/>{live.presenceError||("Live movement · "+live.players.length+" connected players · syncs across devices")}</div>{interactionHint&&<div className="interaction-hint" role="status">{interactionHint}</div>}
       {role==='kitchen'&&<div className="ticket-strip"><div className="ticket-strip-title"><b>LIVE TICKETS</b><small>Newest first · select an order to play</small></div><div>{[...state.orders].reverse().map(o=><button key={o.id} className={o.id===order?.id?'active-ticket':''} onClick={()=>{setSelected(o.id);localStorage.setItem('nova-game-kitchen-order',o.id);}}><b>{o.id}</b><span>{o.customer}</span><small>{STATUS[o.status]}</small>{o.verification?.status==='red'&&<i>!</i>}</button>)}</div></div>}
       {role!=='kitchen'&&<div className="floor-legend"><span><i className="legend-you"/>Your player</span><span><i className="legend-staff"/>Kitchen team</span><span>● Customers reflect shared order stages</span><small>Player movement, tickets, packing, resources, and courier progress sync across devices.</small></div>}
       {(role==='owner'||role==='display')&&<div className="live-order-lane">{[...state.orders].reverse().slice(0,8).map(o=><div key={o.id}><span>{o.id} · {o.customer}</span><b>{STATUS[o.status]}</b><small>{Object.entries(o.items).map(([sku,n])=>FOOD[sku]+'×'+n).join(' ')}</small></div>)}</div>}
     </div>
       {role==='customer'&&<CustomerMission {...{state,config,act,busy,position,move,selected,setSelected,interact,setInteract,live}}/>}
       {role==='kitchen'&&<KitchenMission key={order?.id} {...{state,config,act,busy,position,move,order,interact,setInteract,live}} onBagChange={presence.publishBag}/>}
-      {role==='owner'&&<OwnerMission {...{state,act,busy}}/>}
+      {role==='owner'&&showOwnerControls&&<OwnerMission {...{state,act,busy}}/>}
       {role==='display'&&<DisplayMission {...{state,config}}/>}
     </div>
     {(role==='owner'||role==='display')&&<div className="live-bags">{live.players.filter(p=>p.packing&&state.orders.some(o=>o.id===p.packing.orderId&&o.status==='packing')).map(p=><div className="live-bag-preview" key={p.id}><b>Live packing · {p.packing.orderId}</b><p>{Object.entries(p.packing.counts).filter(([,n])=>n>0).map(([sku,n])=>FOOD[sku]+' ×'+n).join(' · ')||'Empty bag'}</p></div>)}</div>}
