@@ -1,0 +1,26 @@
+{
+  "name": "nova-kitchen",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env server/index.mjs",
+    "dev:lan": "HOST=0.0.0.0 node --env-file-if-exists=.env server/index.mjs",
+    "build": "vite build && node scripts/build-worker.mjs",
+    "start": "node --env-file-if-exists=.env server/index.mjs --production",
+    "start:lan": "HOST=0.0.0.0 node --env-file-if-exists=.env server/index.mjs --production",
+    "test": "node --experimental-sqlite --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "vite": "^7.2.2"
+  }
+}

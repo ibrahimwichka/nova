@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS demo_state (
+  id TEXT PRIMARY KEY NOT NULL,
+  revision INTEGER NOT NULL,
+  payload TEXT NOT NULL
+);
