@@ -3,13 +3,10 @@ import { availableInventory, itemLimit } from '../shared/stock.mjs';
 import { createRoot } from 'react-dom/client';
 import QRCode from 'qrcode';
 import './style.css';
-import Game, { OwnerMission } from './Game.jsx';
-import { WorkspaceTabs, WorkspacePanel, WORKSPACE_TABS, OPERATION_TABS, initialWorkspaceTab } from './WorkspaceTabs.jsx';
-import AppHeader from './AppHeader.jsx';
+import { OwnerMission } from './Game.jsx';
+import PlayInterior from './PlayInterior.jsx';
 import ShiftLaunch from './ShiftLaunch.jsx';
 import Packing from './Packing.jsx';
-import OperationsCenter, { OwnerAlerts } from './Operations.jsx';
-import { DeliveryBoard } from './Delivery.jsx';
 
 const STAGES = ['queued', 'preparing', 'packing', 'ready', 'out_for_delivery', 'delivered', 'collected'];
 const LABEL = { queued: 'Received', preparing: 'Preparing', packing: 'Packing', ready: 'Ready for pickup', collected: 'Collected', out_for_delivery: 'Out for delivery', delivered: 'Delivered', cancelled: 'Cancelled' };
@@ -48,11 +45,8 @@ function App() {
     const requestedView = new URLSearchParams(location.search).get('view');
     return Object.hasOwn(ROLE, requestedView) ? requestedView : 'owner';
   });
-  const [error, setError] = useState(''); const [message, setMessage] = useState(''); const [busy, setBusy] = useState('');
+  const [error, setError] = useState(''); const [busy, setBusy] = useState('');
   const [connected, setConnected] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
-  const [sections, setSections] = useState(() => ({owner:initialWorkspaceTab('owner'),kitchen:initialWorkspaceTab('kitchen')}));
-  const [controlledRole, setControlledRole] = useState('customer');
   const [players, setPlayers] = useState([]), [clockOffset, setClockOffset] = useState(0), [presenceError, setPresenceError] = useState('');
   const [showLaunch, setShowLaunch] = useState(shouldShowShiftIntro);
   const floor = useRef(null);
@@ -74,55 +68,37 @@ function App() {
     setShowLaunch(false);
   }, []);
   async function act(route, input = {}, label = 'Working…') {
-    setBusy(label); setError(''); setMessage('');
+    setBusy(label); setError('');
     try { const response = await fetch(`/api${route}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) }); const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Request failed.'); accept(result); return result; }
     catch (e) { setError(e.message); return null; } finally { setBusy(''); }
   }
-  function role(next) { setView(next); const url = new URL(location.href); url.searchParams.set('view', next); if(WORKSPACE_TABS[next])url.searchParams.set('tab',sections[next]);else url.searchParams.delete('tab');url.hash=''; history.replaceState(null, '', url); setError(''); }
-  function selectSection(next) {
-    setSections(old => ({...old,[view]:next}));
-    const url = new URL(location.href); url.searchParams.set('tab', next); url.hash=''; history.replaceState(null,'',url);
-  }
-  function followSectionLink(event) {
-    if(!WORKSPACE_TABS[view])return;
-    const href = event.target.closest?.('a[href^="#"]')?.getAttribute('href');
-    const next = href === '#delivery-simulator' ? 'delivery' : href === '#ai-operations' ? 'inventory' : href === '#restaurant-floor' || href?.startsWith('#view-guide-') ? 'floor' : '';
-    if(!next)return;
-    event.preventDefault(); selectSection(next);
-    requestAnimationFrame(()=>{const target=document.getElementById(href.slice(1));if(target?.tagName==='DETAILS')target.open=true;target?.scrollIntoView({behavior:'smooth',block:'start'});});
+  function role(next) {
+    setView(next);
+    const url = new URL(location.href);
+    url.searchParams.set('view', next);
+    history.replaceState(null, '', url);
+    setError('');
   }
   if (showLaunch) return <ShiftLaunch roles={ROLE} view={view} onViewChange={role} onEnter={enterFloor} connected={connected} hasSnapshot={hasSnapshot}/>;
   if (!data) return <main className="loading"><h1>Nova Kitchen Lab</h1><p>{connected ? 'Opening the restaurant…' : 'Connecting to the shared restaurant…'}</p><button onClick={refresh}>Retry connection</button></main>;
   const { state, config } = data;
-  const active = state.orders.filter(o => !['collected','delivered','cancelled'].includes(o.status)).length;
   const live = { players, clockOffset, presenceError, onPresenceError: setPresenceError };
-  const tabbed = !!WORKSPACE_TABS[view], section = sections[view] || 'floor';
-  const stockAttention = new Set([...(data.operations?.inventory || []).filter(i=>i.alert).map(i=>i.id),...(state.operations?.restockRequests || []).filter(r=>r.status==='pending').map(r=>r.ingredient)]).size;
-  return <>
-    <AppHeader roles={ROLE} view={view} onViewChange={role} connected={connected} version={state.version}/>
-    <main ref={floor} tabIndex={-1} className="game-mode-active" onClick={followSectionLink}><div className="page-top"><div><h1>{ROLE[view]}</h1><p>One restaurant. {active} active orders. Orders and player movements synchronize across devices.</p></div><Tag>Test data · upstream kitchen simulated</Tag></div>{!connected && <div className="notice error">Connection lost. These are the last synced values. Reconnect before making changes.</div>}{error && <div className="notice error" role="alert">{error}<button className="quiet" onClick={() => setError('')}>Dismiss</button></div>}{message && <div className="notice" role="status">{message}</div>}{busy && <div className="busy" role="status">{busy}</div>}<OwnerAlerts state={state} operations={data.operations} role={view}/>
-      {tabbed ? <>
-        <WorkspaceTabs role={view} value={section} onChange={selectSection} stockAlerts={stockAttention}/>
-        <WorkspacePanel role={view} id="floor" value={section}>
-          <div id="restaurant-floor"><Game key={view} compact role={view} state={state} config={config} act={act} busy={busy} live={live} keyboardActive={section==='floor'} showOwnerControls={false}/></div>
-        </WorkspacePanel>
-        <WorkspacePanel role={view} id="operations" value={section}>
-          <OperationsCenter state={state} config={config} operations={data.operations} act={act} busy={busy} role={view} category={OPERATION_TABS.includes(section)?section:'prep'}/>
-          {view==='owner' && <><div className="workspace-extra" hidden={section!=='staff'}><Owner mode="staff" {...{state,config,act,busy,role}}/></div><details className="workspace-advanced workspace-extra" hidden={section!=='inventory'}><summary>Correct a stock count</summary><Owner mode="inventory" {...{state,config,act,busy,role}}/></details></>}
-        </WorkspacePanel>
-        {view==='owner' && <WorkspacePanel role={view} id="scenarios" value={section}><OwnerMission {...{state,act,busy}}/><details className="workspace-advanced"><summary>Custom scenarios & saved drills</summary><Owner mode="scenarios" {...{state,config,act,busy,role}}/></details></WorkspacePanel>}
-        {view==='kitchen' && <WorkspacePanel role={view} id="packing" value={section}><Kitchen packingOnly onOpenFloor={()=>selectSection('floor')} {...{state,config,act,busy}}/></WorkspacePanel>}
-        <WorkspacePanel role={view} id="delivery" value={section}><DeliveryBoard state={state} act={act} busy={busy} clockOffset={clockOffset}/></WorkspacePanel>
-      </> : <>
-
-      <div id="restaurant-floor">
-        {view === 'split' ? <><div className="split-intro"><h1>Customer + Owner · one live restaurant</h1><p>Both players share this floor and delivery timeline. Walk either avatar; the other Mac sees the same movement. Use Kitchen in another tab to prepare tickets.</p><div className="row wrap"><button className={controlledRole==='customer'?'primary':''} aria-pressed={controlledRole==='customer'} onClick={()=>setControlledRole('customer')}>WASD: Customer</button><button className={controlledRole==='owner'?'primary':''} aria-pressed={controlledRole==='owner'} onClick={()=>setControlledRole('owner')}>WASD: Owner</button></div></div><div className="split-layout"><Game compact keyboardActive={controlledRole==='customer'} onActivate={()=>setControlledRole('customer')} role="customer" state={state} config={config} act={act} busy={busy} live={live}/><Game compact keyboardActive={controlledRole==='owner'} onActivate={()=>setControlledRole('owner')} role="owner" state={state} config={config} act={act} busy={busy} live={live}/></div></> : <Game key={view} role={view} state={state} config={config} act={act} busy={busy} live={live}/>}
-      </div>
-      <DeliveryBoard state={state} act={act} busy={busy} clockOffset={clockOffset} readOnly={view==='display'} preferredOrderId={view==='customer'||view==='split'?localStorage.getItem('nova-game-order')||'':''}/>
-      <OperationsCenter state={state} config={config} operations={data.operations} act={act} busy={busy} role={view}/>
-      <div className="game-controls-toggle"><button onClick={() => setShowDetails(v => !v)} aria-expanded={showDetails}>{showDetails ? 'Hide detailed controls ↑' : 'Detailed controls & optional camera ↓'}</button><small>Two Macs. One shared restaurant. No hardware needed.</small></div>{showDetails && <>{view === 'owner' && <Owner state={state} config={config} act={act} busy={busy} role={role}/>} {view === 'kitchen' && <Kitchen state={state} config={config} act={act} busy={busy}/>} {view === 'customer' && <Customer state={state} config={config} act={act} busy={busy}/>} {view === 'display' && <Display state={state} config={config}/>}</>}
+  const ownerProps = { state, config, act, busy, role };
+  return <PlayInterior {...{ data, view, connected, act, busy, error, live }} views={ROLE}
+    changeView={role} clearError={() => setError('')} floorRef={floor}
+    inventoryTools={view === 'owner' && <details className="workspace-advanced"><summary>Correct a stock count</summary><Owner mode="inventory" {...ownerProps}/></details>}
+    opsTools={(category, openFloor) => <>
+      {view === 'owner' && category === 'staff' && <Owner mode="staff" {...ownerProps}/>}
+      {view === 'owner' && category === 'scenarios' && <>
+        <OwnerMission {...{ state, act, busy }}/>
+        <details className="workspace-advanced"><summary>Custom scenarios & saved drills</summary><Owner mode="scenarios" {...ownerProps}/></details>
       </>}
-      <details className="setup"><summary>Two-Mac setup & what is real</summary><p><b>Mac 1:</b> owner and kitchen tabs. <b>Mac 2:</b> customer view. Open the demo screen in any extra window. These role views are demonstration perspectives, not separate authenticated accounts.</p><div className="link-grid">{Object.keys(ROLE).map(key => <a key={key} href={`/?view=${key}`} target="_blank" rel="noreferrer">Open {ROLE[key]} ↗</a>)}</div><p>{config.lanEnabled ? `Local team server: ${config.lanUrls.join(' or ')}` : 'Local mode: run npm run dev:lan to share over Wi-Fi. On a hosted site, open this same site address on both Macs.'}</p><p>Restaurant actions and deliveries are simulated. AI copilots analyze the shared queue, stock, staff, and demo financial figures. Forecasts use sparse demo history and are estimates. Automatic low-stock alerts use stock thresholds; they run without AI. Photo checks and receipts are sent to OpenRouter only when you choose Analyze; images are not saved by this app. Restock requests notify the owner inside this app. The owner records received stock; no supplier order, email, or purchase is sent.</p><p>{config.visionConfigured ? `OpenRouter configured · ${config.model}` : 'AI key not configured. The simulation, manual packing, and fixture tests still work.'}</p></details></main><footer>Nova MVP · camera optional · no purchases required</footer></>;
+      {view === 'kitchen' && category === 'packing' && <Kitchen packingOnly onOpenFloor={openFloor} {...{ state, config, act, busy }}/>}
+      {view === 'customer' && <details className="workspace-advanced"><summary>Detailed customer controls</summary><Customer {...{ state, config, act, busy }}/></details>}
+      {view === 'display' && <Display {...{ state, config }}/>}
+    </>}>
+    <details className="setup"><summary>Two-Mac setup & what is real</summary><p><b>Mac 1:</b> owner and kitchen tabs. <b>Mac 2:</b> customer view. Open the demo screen in any extra window. These role views are demonstration perspectives, not separate authenticated accounts.</p><div className="link-grid">{Object.keys(ROLE).map(key => <a key={key} href={`/?view=${key}`} target="_blank" rel="noreferrer">Open {ROLE[key]} ↗</a>)}</div><p>{config.lanEnabled ? `Local team server: ${config.lanUrls.join(' or ')}` : 'Local mode: run npm run dev:lan to share over Wi-Fi. On a hosted site, open this same site address on both Macs.'}</p><p>Restaurant actions and deliveries are simulated. AI copilots analyze the shared queue, stock, staff, and demo financial figures. Forecasts use sparse demo history and are estimates. Automatic low-stock alerts use stock thresholds; they run without AI. Photo checks and receipts are sent to OpenRouter only when you choose Analyze; images are not saved by this app. Restock requests notify the owner inside this app. The owner records received stock; no supplier order, email, or purchase is sent.</p><p>{config.visionConfigured ? `OpenRouter configured · ${config.model}` : 'AI key not configured. The simulation, manual packing, and fixture tests still work.'}</p></details>
+  </PlayInterior>;
 }
 
 function Owner({ state, config, act, busy, role, mode = 'all' }) {

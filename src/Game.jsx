@@ -1,14 +1,21 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { SPOTS, CUSTOMER_SPOTS, KITCHEN_SPOTS, TILE, findPath, walkable, nearSpot, movementForKey, suggestedCustomerSpot, requiredStations, orderProblems } from './game-logic.mjs';
 import './game.css';
 import Packing from './Packing.jsx';
 import { availableInventory, itemLimit, stockIssue } from '../shared/stock.mjs';
 import { presencePosition } from '../shared/presence.mjs';
 import { usePlayerPresence } from './use-presence.jsx';
+import { ActionButton, ActionHost, MiniMap, MissionRail } from './Hud.jsx';
 
 const FOOD = { burger: '🍔', wrap: '🌯', fries: '🍟', sprite: '🥤' };
 const STATUS = { queued: 'Ticket received', preparing: 'On the cook line', packing: 'Bag check', ready: 'Ready to collect', collected: 'Collected', out_for_delivery: 'Out for delivery', delivered: 'Delivered', cancelled: 'Cancelled' };
 const EMPTY = { burger: 0, wrap: 0, fries: 0, sprite: 0 };
+const VIEW_HUD = {
+  customer: { title: 'Dinner run', panel: 'Current objective' },
+  kitchen: { title: 'Kitchen service', panel: 'Current objective' },
+  owner: { title: 'Shift command', panel: 'Shift controls' },
+  display: { title: 'Live spectator', panel: 'Live feed' },
+};
 const pixel = p => ({ x: p.x * TILE + 20, y: p.y * TILE + 20 });
 
 function useWalk(role, publish) {
@@ -45,7 +52,7 @@ function Person({ x, y, color = '#518576', name, chef = false, walking = false, 
       <circle cy="-10" r="10" fill="#e8b289"/><path d="M-10-11q0-14 13-9l7 8-7-4-11 3" fill="#403c3b"/>
       {chef && <><rect x="-11" y="-22" width="22" height="8" rx="2" fill="#fffaf1"/><circle cx="-7" cy="-23" r="7" fill="#fffaf1"/><circle cy="-26" r="8" fill="#fffaf1"/><circle cx="7" cy="-23" r="7" fill="#fffaf1"/><path d="M-5 1v13H5V1" fill="#f2eee5"/></>}
     </g>
-    {name && <><rect x="-40" y="-49" width="80" height="18" rx="9" fill={you ? '#243e3e' : '#ffffff'} opacity=".95"/><text y="-37" textAnchor="middle" fill={you ? '#fff' : '#425754'} fontSize="10" fontWeight="700">{name}</text></>}
+    {name && <><rect x="-42" y="-51" width="84" height="20" rx="5" fill={you ? '#f4c486' : '#152c25'} stroke={you ? '#ffe1ac' : '#789384'}/><text y="-37" textAnchor="middle" fill={you ? '#182820' : '#eaf2e5'} fontSize="11" fontWeight="800">{name}</text></>}
     {bubble && <><rect x="-44" y="-76" width="88" height="21" rx="6" fill="#fff6d7"/><text y="-62" textAnchor="middle" fontSize="10" fill="#725128">{bubble}</text></>}
   </g>;
 }
@@ -57,16 +64,21 @@ function Equipment({ id, x, available, active, label }) {
     {id === 'grill' && <><rect x="-51" y="11" width="102" height="38" rx="5" fill="#334b49"/>{[-35,-17,1,19,37].map(n => <path key={n} d={'M' + n + ' 15v30'} stroke="#647570" strokeWidth="3"/>)}<text textAnchor="middle" y="40" fontSize="28">🍔</text></>}
     {id === 'fryer' && <>{[-30,30].map(n => <g key={n}><rect x={n-22} y="12" width="44" height="34" rx="4" fill="#dba54e"/><path d={'M' + n + ' 12V-1'} stroke="#536b62" strokeWidth="5"/></g>)}<text textAnchor="middle" y="40" fontSize="28">🍟</text></>}
     {id === 'prep' && <><rect x="-50" y="12" width="100" height="38" rx="4" fill="#90ad77"/><text textAnchor="middle" y="41" fontSize="30">🌯</text></>}
-    <rect x="-50" y="84" width="100" height="21" rx="6" fill={available ? '#334d48' : '#a65342'}/>
-    <text textAnchor="middle" y="98" fill="#fff" fontSize="11" fontWeight="700">{available ? label : label + ' · OFF'}</text>
+    <rect x="-60" y="82" width="120" height="24" rx="5" fill={available ? '#142923' : '#763d32'} stroke={available ? '#8ab09b' : '#e39175'}/>
+    <text textAnchor="middle" y="98" fill="#fff3da" fontSize="13" fontWeight="800">{available ? label : label + ' · OFF'}</text>
     {active && available && <g className="steam"><path d="M-15-4q-9-9 0-18m15 18q-9-9 0-18m15 18q-9-9 0-18" fill="none" stroke="#fff7dd" strokeWidth="3" strokeLinecap="round"/></g>}
   </g>;
 }
 
-function Restaurant({ role, state, config, selected, position, walking, move, step, onInteract, live, playerId, keyboardActive }) {
+function Restaurant({ role, state, config, selected, position, walking, move, step, onInteract, live, playerId, keyboardActive, active }) {
+  const mapId = useId();
   const room = useRef(null);
   const [tick, setTick] = useState(Date.now());
-  useEffect(() => { const id = setInterval(() => setTick(Date.now() + (live?.clockOffset || 0)), 50); return () => clearInterval(id); }, [live?.clockOffset]);
+  useEffect(() => {
+    if (!active) return;
+    const id = setInterval(() => setTick(Date.now() + (live?.clockOffset || 0)), 50);
+    return () => clearInterval(id);
+  }, [live?.clockOffset, active]);
   const observer = role === 'display';
   const spots = role === 'kitchen' ? KITCHEN_SPOTS : role === 'owner' ? ['office', 'tickets', 'packing', 'counter', 'pickup'] : CUSTOMER_SPOTS;
   const playback = (observer || role === 'owner') && state.playback && state.scenarios.find(s => s.id === state.playback.scenarioId);
@@ -116,23 +128,38 @@ function Restaurant({ role, state, config, selected, position, walking, move, st
         {replay ? <>
           <span>{state.playback.policy === 'fixed' ? 'Fixed plan' : 'Recovery plan'}</span>
           <b>{Math.max(0, Math.floor(minute))}<small> / 60 min</small></b>
-        </> : goal ? <span className="waypoint-label">◆ {goal.name}</span> : <span>Shared restaurant</span>}
+        </> : goal ? <span className="waypoint-label">
+          <span className="waypoint-arrow" aria-hidden="true" style={{ transform: `rotate(${directionAngle}deg)` }}>➜</span>
+          {goal.name}
+        </span> : <span>Shared restaurant</span>}
       </div>
     </div>
     {replay && <progress className="floor-progress" value={Math.max(0, minute)} max={60} aria-label="Scenario replay progress"/>}
     <div ref={room} className={'restaurant-room ' + (observer ? 'observer-room' : '')} tabIndex={observer ? undefined : 0} role="group" aria-label={observer ? 'Restaurant overview' : 'Restaurant game. Use WASD or arrows to walk freely. E to interact. Optional click to walk.'}>
       <span key={replay ? `${state.playback.startedAt}-${state.playback.policy}` : 'live'} className="floor-sweep" aria-hidden="true"/>
-      <svg viewBox="0 0 960 600" onClick={clickFloor} aria-label="Interactive restaurant floor">
+      <svg className="service-map" viewBox="0 0 960 600" onClick={clickFloor} aria-label="Interactive restaurant floor">
         <defs>
-          <pattern id="kitchen-tile" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="#d5dfd4"/><path d="M40 0H0V40" fill="none" stroke="#becfc3" strokeWidth="1"/></pattern>
-          <pattern id="dining-tile" width="80" height="80" patternUnits="userSpaceOnUse"><rect width="80" height="80" fill="#f3e4ca"/><rect width="40" height="40" fill="#efdfc2"/><rect x="40" y="40" width="40" height="40" fill="#efdfc2"/></pattern>
+          <pattern id={`${mapId}-kitchen`} width="40" height="40" patternUnits="userSpaceOnUse">
+            <rect width="40" height="40" fill="#332447"/>
+            <path d="M40 0H0V40" fill="none" stroke="#aa85c3" strokeOpacity=".37"/>
+          </pattern>
+          <pattern id={`${mapId}-dining`} width="80" height="80" patternUnits="userSpaceOnUse">
+            <rect width="80" height="80" fill="#4c2843"/>
+            <path d="M0 0h40v40H0Zm40 40h40v40H40Z" fill="#60324b"/>
+          </pattern>
+          <radialGradient id={`${mapId}-light`} cx=".5" cy=".5" r=".5">
+            <stop stopColor="#ff8b57" stopOpacity=".34"/>
+            <stop offset="1" stopColor="#ff8b57" stopOpacity="0"/>
+          </radialGradient>
         </defs>
-        <rect width="960" height="600" rx="12" fill="#354e49"/>
-        <rect x="24" y="24" width="912" height="256" rx="8" fill="url(#kitchen-tile)"/>
-        <rect x="24" y="320" width="912" height="256" rx="8" fill="url(#dining-tile)"/>
-        <path d="M30 32h900M30 328h900" stroke="#fff" opacity=".3" strokeWidth="7"/>
-        <text x="49" y="54" fontSize="12" fontWeight="800" letterSpacing="3" fill="#577267">KITCHEN</text>
-        <text x="705" y="550" fontSize="14" fontWeight="800" letterSpacing="4" fill="#c7ad83">NOVA KITCHEN</text>
+        <rect width="960" height="600" rx="12" fill="#160b2e"/>
+        <rect x="16" y="16" width="928" height="568" rx="11" fill="none" stroke="#df659f" strokeOpacity=".72"/>
+        <rect x="24" y="24" width="912" height="256" rx="8" fill={`url(#${mapId}-kitchen)`}/>
+        <rect x="24" y="320" width="912" height="256" rx="8" fill={`url(#${mapId}-dining)`}/>
+        {[170, 480, 790].map(x => <ellipse key={x} cx={x} cy="409" rx="188" ry="161" fill={`url(#${mapId}-light)`}/>)}
+        <path d="M31 35h898M31 332h898" stroke="#f3d3a1" strokeOpacity=".22" strokeWidth="4"/>
+        <text x="49" y="54" fontSize="13" fontWeight="850" letterSpacing="3" fill="#f2c8ed">KITCHEN</text>
+        <text x="705" y="550" fontSize="14" fontWeight="850" letterSpacing="4" fill="#e0c39b">NOVA KITCHEN</text>
         {['grill','fryer','prep'].map((id, i) => <Equipment key={id} id={id} x={180+i*240} available={stationAvailable(id)} active={activeStation(id)} label={SPOTS[id].name.toUpperCase()}/>)}
         <g transform="translate(841,195)"><rect width="83" height="79" rx="7" fill="#a2afa3"/><rect width="83" height="66" rx="7" fill={state.stations.find(s => s.id === 'packing')?.available ? '#e4d5b3' : '#bd9583'}/><text x="42" y="42" textAnchor="middle" fontSize="33">🛍️</text><text x="42" y="-8" textAnchor="middle" fontSize="11" fill="#35584a" fontWeight="800">PACKING</text></g>
         <g transform="translate(485,213)"><rect width="114" height="40" rx="5" fill="#49695b"/>{[0,1,2,3].map(i => <g key={i}><rect x={9+i*26} y="7" width="18" height="26" rx="2" fill="#fff8df"/><path d={'M'+(12+i*26)+' 15h12m-12 6h9'} stroke="#b0b9a1" strokeWidth="2"/></g>)}<text x="57" y="57" textAnchor="middle" fontSize="10" fill="#49695b" fontWeight="700">ORDER TICKETS</text></g>
@@ -161,7 +188,6 @@ function Restaurant({ role, state, config, selected, position, walking, move, st
         {!observer && <Person {...local} color={role === 'kitchen' ? '#527d69' : role === 'owner' ? '#718aa5' : '#e09e4b'} chef={role === 'kitchen'} name={role==='owner'?'YOU / OWNER':'YOU'} you walking={walking}/>}
       </svg>
     </div>
-    {goal && <div className="direction-hint"><span className="direction-arrow" aria-hidden="true" style={{transform:'rotate('+directionAngle+'deg)'}}>→</span><span><b>Suggested: {goal.name}</b><small>Optional direction · explore freely; actions work anywhere</small></span></div>}
     <div className="room-bottomline">{observer ? <span>Orders and resource availability are shared across all devices.</span> : <><span><kbd>W A S D</kbd> / arrows to walk{keyboardActive ? ' · active player' : ' · click this view to control'} · optional click to walk · <kbd>E</kbd> interact</span><button className="quiet" onClick={onInteract}>{role==='customer'?'Menu / pickup action ↵':'Interact nearby ↵'}</button></>}</div>
   </div>;
 }
@@ -199,7 +225,7 @@ const GUIDES = {
       ['Pack & check every item', 'At Packing bench, tap shelf items to add them; tap bag items to remove them. Check game bag reports missing or extra items. Fix the bag and check again.'],
       ['Seal & hand off', 'After a matching check, confirm and seal. A delivery courier approaches and collects with the matching reference, then travels to the house. The customer confirms receipt at the door.'],
     ],
-    note: 'Walking is shared across devices, along with tickets, station tasks, bag checks, and courier progress. Open AI camera packing check at the bag bench for an iPhone photo. Use the Prep tab for AI priorities, Inventory for restock requests, and Packing & camera to upload a tray photo.',
+    note: 'Walking is shared across devices, along with tickets, station tasks, bag checks, and courier progress. Open AI camera packing check at the bag bench for an iPhone photo. Use Ops → Prep for AI priorities, Inventory for restock requests, and Ops → Packing & camera for tray photos.',
   },
   owner: {
     name: 'Owner',
@@ -208,7 +234,7 @@ const GUIDES = {
       ['Watch the live shift', 'The floor, ticket cards, and counters reflect customer orders and kitchen progress. IN PLAY counts active tickets; SERVED counts completed pickups and deliveries; BAG FLAGS counts unresolved mismatches.'],
       ['Choose a challenge', 'Worker absence, missing chicken, or broken equipment tests the current tickets. Lunch rush adds six simulated tickets to the comparison. Fixed uses normal assignments; Recovery uses qualified cover.'],
       ['Preview, then apply', 'Play Fixed or Recovery to show a separate simulation on Owner and Demo screen. Live tickets stay unchanged. Apply challenge changes the shared kitchen; compare again if it has changed.'],
-      ['Resolve or reset', 'Use Team for staff and equipment, Inventory for stock, Finances for receipts, and Scenarios for saved drills. Reset for another round clears live orders and restores resources on both Macs.'],
+      ['Resolve or reset', 'Use Inventory for stock. Open Ops for Team, Finances, and Scenarios. Reset for another round clears live orders and restores resources on both Macs.'],
     ],
     note: 'Refresh preserves the shared restaurant. Reset returns it to zero orders and keeps saved drills. Saved-drill restarts restore their old snapshots; unavailable stock or equipment may still leave orders blocked.',
   },
@@ -224,7 +250,7 @@ const GUIDES = {
     note: 'This page is read-only. Shared avatars show the actual players moving; the delivery board follows their courier. Live split view puts Customer and Owner together with separate controls.',
   },
 };
-function PageGuide({ role, compact = false }) {
+function PageGuide({ role }) {
   const guide = GUIDES[role];
   return <details id={`view-guide-${role}`} className="page-guide">
     <summary>How this page works · {guide.name}<span aria-hidden="true">Collapse guide ↑</span></summary>
@@ -235,6 +261,7 @@ function PageGuide({ role, compact = false }) {
 }
 
 function CustomerMission({ state, config, act, busy, position, move, selected, setSelected, interact, setInteract, live }) {
+  const formId = useId();
   const [name, setName] = useState(() => localStorage.getItem('nova-game-name') || 'Demo guest');
   const [cart, setCart] = useState({ burger: 1, fries: 1, sprite: 1, wrap: 0 });
   const [menuOpen, setMenuOpen] = useState(false), [left, setLeft] = useState(false), [editing, setEditing] = useState(false);
@@ -266,24 +293,27 @@ function CustomerMission({ state, config, act, busy, position, move, selected, s
     <div className="mission-eyebrow">CUSTOMER / ORDER & DELIVERY</div>
     <h2>{!order?'What are we having?':order.status==='cancelled'?'Order cancelled.':order.status==='delivered'?'Your food is home.':order.status==='out_for_delivery'?'Follow your courier.':left?'Thanks for stopping by.':order.status==='collected'?'Pickup complete!':order.status==='ready'?'Your order is ready.':'The kitchen has your ticket.'}</h2>
     <Steps labels={['Explore','Order','Kitchen','Pickup','Delivery']} current={menuOpen&&!order?1:current}/>
-    {!order&&!menuOpen&&<><p>Open the menu wherever you are. Explore with WASD while the kitchen prepares your meal. Choose delivery to a demo house or pickup at the restaurant.</p><div className="mission-illustration">🍔 <span>+</span> 🍟 <span>+</span> 🥤</div><WalkButton id="counter" {...{position,move}}/><button className="game-primary" onClick={()=>setMenuOpen(true)}>Open menu →</button></>}
-    {menuOpen&&(!order||editing)&&<form onSubmit={place} className="game-menu">
+    {!order&&!menuOpen&&<><p>Open the menu wherever you are. Explore with WASD while the kitchen prepares your meal. Choose delivery to a demo house or pickup at the restaurant.</p><div className="mission-illustration">🍔 <span>+</span> 🍟 <span>+</span> 🥤</div><WalkButton id="counter" {...{position,move}}/><ActionButton onClick={()=>setMenuOpen(true)}>Open menu</ActionButton></>}
+    {menuOpen&&(!order||editing)&&<form id={formId} onSubmit={place} className="game-menu">
       {!editing&&<><label>Your name<input value={name} maxLength="40" required onChange={e=>setName(e.target.value)}/></label><div className="fulfillment-choice"><button type="button" className={fulfillment==='delivery'?'chosen':''} onClick={()=>setFulfillment('delivery')}>🛵 Delivery</button><button type="button" className={fulfillment==='pickup'?'chosen':''} onClick={()=>setFulfillment('pickup')}>🛍 Pickup</button></div>{fulfillment==='delivery'&&<label>Demo destination<select value={homeId} onChange={e=>setHomeId(e.target.value)}>{config.homes.map(home=><option key={home.id} value={home.id}>{home.name} · {home.distanceKm} km · {home.travelSeconds}s demo trip</option>)}</select></label>}</>}
       <h3>{editing?'Edit the unstarted ticket':'Choose your meal'}</h3>
       {Object.entries(config.catalog).map(([sku,item])=>{const limit=itemLimit(sku,cart,stock,config.catalog);return <div className="game-menu-item" key={sku}><span className="food-art">{FOOD[sku]}</span><div><b>{item.name}</b><small>Up to {limit} from stock</small></div><QuantityEditor name={item.name} value={cart[sku]||0} limit={limit} change={n=>setCart(c=>({...c,[sku]:n}))}/></div>;})}
       {shortage&&<div className="cart-warning">Stock changed: {config.ingredients[shortage.id]} needs {shortage.required}, but only {shortage.available} is available. Reduce the quantity or ask Owner to restock.</div>}
       <div className="row wrap"><button type="button" onClick={()=>setCart({...EMPTY})}>Clear all items</button>{editing&&<button type="button" onClick={()=>{setEditing(false);setMenuOpen(false);}}>Keep current order</button>}</div>
-      <button className="game-primary" disabled={!!busy||!total||!!shortage}>{editing?'Save order changes':'Place order'} · {total} items →</button><small>Quantities follow ingredients in storage and existing queued tickets.</small>
+      <ActionButton type="submit" form={formId} disabled={!!busy || !total || !!shortage}>{editing ? 'Save changes' : 'Place order'} · {total} items</ActionButton><small>Quantities follow ingredients in storage and existing queued tickets.</small>
     </form>}
     {order&&!editing&&<><div className="ticket-heading"><span>{order.id}</span><b>{STATUS[order.status]}</b></div><Receipt {...{order,config}}/>
       {order.status==='queued'&&<div className="row wrap"><button disabled={!!busy} onClick={()=>{setCart({...EMPTY,...order.items});setEditing(true);setMenuOpen(true);}}>Edit / remove items</button><button disabled={!!busy} className="quiet" onClick={()=>act('/orders/'+order.id+'/cancel')}>Cancel order</button></div>}
       {issues.length>0&&<div className="game-alert">{issues.map(t=><p key={t}>{t}</p>)}</div>}
       {order.status==='packing'&&liveBag&&<div className="live-bag-preview"><b>Kitchen is packing now</b><p>{Object.entries(liveBag.counts).filter(([,n])=>n>0).map(([sku,n])=>FOOD[sku]+' ×'+n).join(' · ')||'Empty bag'}</p></div>}
       {order.verification?.status==='red'&&order.status==='packing'&&<div className="game-alert">The bag check caught a missing or extra item. The kitchen must fix it before handoff.</div>}
-      {order.delivery?<p className="hint">Follow this order in the <a href="#delivery-simulator">main delivery simulator ↑</a>. Walking around won’t interrupt the courier.</p>:order.status==='ready'?<><div className="reference-card"><small>YOUR PICKUP REFERENCE</small><b>{order.pickupCode}</b></div><WalkButton id="pickup" {...{position,move}}/><button className="game-primary" disabled={!!busy} onClick={()=>act('/orders/'+order.id+'/collect',{code:order.pickupCode})}>Show reference & collect bag</button></>:null}
+      {order.delivery?<p className="hint">Follow this order in the <a href="#delivery-simulator">main delivery simulator ↑</a>. Walking around won’t interrupt the courier.</p>:order.status==='ready'?<><div className="reference-card"><small>YOUR PICKUP REFERENCE</small><b>{order.pickupCode}</b></div><WalkButton id="pickup" {...{position,move}}/><ActionButton disabled={!!busy} onClick={()=>act('/orders/'+order.id+'/collect',{code:order.pickupCode})}>Collect bag</ActionButton></>:null}
       {['queued','preparing','packing'].includes(order.status)&&<><div className="waiting-message"><span className="waiting-dot"/>{order.status==='queued'?'Waiting for Kitchen to accept your ticket. You can still edit the items.':order.status==='preparing'?'The kitchen is working at the required stations.':'Your bag is being assembled and checked.'}</div><WalkButton id="lounge" {...{position,move}}>Take a seat nearby</WalkButton><p className="hint">On the other Mac, select {order.id} in Kitchen.</p></>}
-      {order.status==='collected'&&!left&&<><WalkButton id="exit" {...{position,move}}/><button className="game-primary" onClick={()=>setLeft(true)}>Leave restaurant →</button></>}
-      {completed&&<button className="game-primary" onClick={again}>Play another order</button>}
+      {order.status==='collected'&&!left&&<><WalkButton id="exit" {...{position,move}}/><ActionButton onClick={()=>setLeft(true)}>Leave restaurant</ActionButton></>}
+      
+      {completed && (order.status !== 'collected' || left) && <ActionButton onClick={again}>Play another order</ActionButton>}
+      {!completed && order.delivery && ['ready','out_for_delivery'].includes(order.status) && <ActionButton onClick={() => { location.hash = 'delivery-simulator'; }}>Track courier</ActionButton>}
+      {!completed && ['queued','preparing','packing'].includes(order.status) && <ActionButton onClick={() => move(SPOTS.lounge)}>Walk to waiting area</ActionButton>}
     </>}
   </aside>;
 }
@@ -303,7 +333,7 @@ function PackBag({ order, state, config, act, busy, onBagChange }) {
   const checkResult=fresh?order.verification:null;
   const total=Object.values(counts).reduce((a,b)=>a+b,0);
   useEffect(()=>{onBagChange({orderId:order.id,counts});return()=>onBagChange(null);},[signature,order.id]);
-  return <div className="pack-game"><p>Tap the shelf to add items. Use − to remove one, × to remove a type, or Clear bag to start over.</p><div className="food-shelf">{Object.entries(config.catalog).map(([sku,item])=><button type="button" key={sku} disabled={!!busy||counts[sku]>=itemLimit(sku,counts,stock,config.catalog)} onClick={()=>change(sku,counts[sku]+1)} aria-label={'Pack '+item.name}><span>{FOOD[sku]}</span><small>{item.name}</small><b>+</b></button>)}</div><div className="bag-zone"><span className="bag-label">YOUR BAG · {total} ITEMS</span>{total?Object.entries(config.catalog).filter(([sku])=>counts[sku]>0).map(([sku,item])=><div className="bag-count-row" key={sku}><span>{FOOD[sku]}</span><b>{item.name}</b><QuantityEditor name={'bag '+item.name} value={counts[sku]} limit={itemLimit(sku,counts,stock,config.catalog)} disabled={!!busy} change={n=>change(sku,n)}/></div>):<span className="empty-bag">🛍️<small>Fill this bag from the shelf</small></span>}</div><button type="button" disabled={!!busy||!total} onClick={()=>{setCounts({...EMPTY});setConfirmed(false);setCheckedBag(null);}}>Clear bag</button><button className="game-primary" disabled={!!busy} onClick={check}>Check game bag →</button>{checkResult&&<div className={'bag-result '+checkResult.status}><b>{checkResult.status==='green'?'✓ Bag matches the ticket':'Something is missing or extra'}</b>{checkResult.rows.filter(r=>r.expected!==r.observed).map(r=><p key={r.sku}>{r.name}: {r.observed} of {r.expected}</p>)}</div>}{checkResult?.status==='green'&&<><label className="check"><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/>I checked this game bag</label><button className="game-primary" disabled={!!busy||!confirmed} onClick={()=>act('/orders/'+order.id+'/ready',{verificationId:checkResult.id})}>Seal bag & send to pickup →</button></>}<small>Any item change requires a new check. Use a real tray photo below for an AI check.</small><details className="game-camera"><summary>AI camera packing check</summary><Packing cameraOnly bagSignature={signature} {...{order,config,act,busy}}/></details></div>;
+  return <div className="pack-game"><p>Tap the shelf to add items. Use − to remove one, × to remove a type, or Clear bag to start over.</p><div className="food-shelf">{Object.entries(config.catalog).map(([sku,item])=><button type="button" key={sku} disabled={!!busy||counts[sku]>=itemLimit(sku,counts,stock,config.catalog)} onClick={()=>change(sku,counts[sku]+1)} aria-label={'Pack '+item.name}><span>{FOOD[sku]}</span><small>{item.name}</small><b>+</b></button>)}</div><div className="bag-zone"><span className="bag-label">YOUR BAG · {total} ITEMS</span>{total?Object.entries(config.catalog).filter(([sku])=>counts[sku]>0).map(([sku,item])=><div className="bag-count-row" key={sku}><span>{FOOD[sku]}</span><b>{item.name}</b><QuantityEditor name={'bag '+item.name} value={counts[sku]} limit={itemLimit(sku,counts,stock,config.catalog)} disabled={!!busy} change={n=>change(sku,n)}/></div>):<span className="empty-bag">🛍️<small>Fill this bag from the shelf</small></span>}</div><button type="button" disabled={!!busy||!total} onClick={()=>{setCounts({...EMPTY});setConfirmed(false);setCheckedBag(null);}}>Clear bag</button>{checkResult?.status === 'green' ? <button type="button" disabled={!!busy} onClick={check}>Check again</button> : <ActionButton disabled={!!busy} onClick={check}>Check game bag</ActionButton>}{checkResult&&<div className={'bag-result '+checkResult.status}><b>{checkResult.status==='green'?'✓ Bag matches the ticket':'Something is missing or extra'}</b>{checkResult.rows.filter(r=>r.expected!==r.observed).map(r=><p key={r.sku}>{r.name}: {r.observed} of {r.expected}</p>)}</div>}{checkResult?.status==='green'&&<><label className="check"><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/>I checked this game bag</label><ActionButton disabled={!!busy || !confirmed} onClick={()=>act('/orders/'+order.id+'/ready',{verificationId:checkResult.id})}>Seal bag & send to pickup</ActionButton></>}<small>Any item change requires a new check. Use a real tray photo below for an AI check.</small><details className="game-camera"><summary>AI camera packing check</summary><Packing cameraOnly bagSignature={signature} {...{order,config,act,busy}}/></details></div>;
 }
 
 function KitchenMission({state,config,act,busy,position,move,order,interact,setInteract,live,onBagChange}) {
@@ -324,7 +354,7 @@ function KitchenMission({state,config,act,busy,position,move,order,interact,setI
       else if(!required.length&&nearSpot(position,'packing'))cook('packing');
     }
   },[interact]);
-  if(!order) return <aside className="mission-panel"><div className="mission-eyebrow">PLAYER 02 / KITCHEN</div><h2>No tickets yet.</h2><p>The restaurant starts with zero orders. Ask the other Mac to open Customer, open the menu, and place the first order.</p><p>It will appear in the ticket strip below the room. Select it, accept it at Order tickets, then follow the cooking and packing steps.</p><a href="/?view=customer" target="_blank" rel="noreferrer">Open Customer in another tab ↗</a></aside>;
+  if(!order) return <aside className="mission-panel"><div className="mission-eyebrow">PLAYER 02 / KITCHEN</div><h2>No tickets yet.</h2><p>The restaurant starts with zero orders. Ask the other Mac to open Customer, open the menu, and place the first order.</p><p>Select it from Ticket missions and follow the cooking and packing steps.</p><a href="/?view=customer" target="_blank" rel="noreferrer">Open Customer in another tab ↗</a><ActionButton disabled>Waiting for a ticket</ActionButton></aside>;
   const stations=requiredStations(order,config.catalog), done=order.gameStations || [];
   const remaining=stations.filter(id=>!done.includes(id));
   const atStation=remaining.find(id=>nearSpot(position,id));
@@ -339,11 +369,17 @@ function KitchenMission({state,config,act,busy,position,move,order,interact,setI
     },1800);
   }
   return <aside className="mission-panel"><div className="mission-eyebrow">PLAYER 02 / KITCHEN</div><h2>{order.id} <span className="guest-name">for {order.customer}</span></h2><Steps labels={['Ticket','Cook','Pack','Handoff']} current={Math.min(4,current)}/><Receipt {...{order,config}}/>{issues.length>0&&<div className="game-alert">{issues.map(t=><p key={t}>{t}</p>)}<small>Owner controls can restore stock or capacity.</small></div>}
-    {order.status==='queued'&&<><p>Pick up this ticket at the pass. Accepting it reserves the ingredients.</p><WalkButton id="tickets" {...{position,move}}/><button className="game-primary" disabled={!!busy||!nearSpot(position,'tickets')||issues.length>0} onClick={()=>act('/orders/'+order.id+'/prepare')}>Accept ticket & start cooking →</button></>}
-    {order.status==='preparing'&&<><p>Visit every required cooking station. Each task takes two game seconds.</p><div className="station-checklist">{stations.map(id=><button key={id} className={done.includes(id)?'task-done':''} onClick={()=>move(SPOTS[id])}><span>{done.includes(id)?'✓':'⌖'}</span>{SPOTS[id].name}<small>{done.includes(id)?'Completed':'Walk here'}</small></button>)}</div>{!stations.length&&<WalkButton id="packing" {...{position,move}}>Walk to drinks / packing</WalkButton>}{cooking?<div className="cooking-progress" role="status"><b>Working at {SPOTS[cooking].name}…</b><div><span/></div></div>:<button className="game-primary" disabled={!!busy||issues.length>0||(!atStation&&!(stations.length===0&&nearSpot(position,'packing')))} onClick={()=>cook(atStation||'packing')}>{atStation?'Prepare at '+SPOTS[atStation].name:stations.length===0?'Get drinks ready':'Walk to a cooking station'}</button>}<small>Station completion is shared across devices. These actions simulate cooking.</small></>}
-    {order.status==='packing'&&(nearSpot(position,'packing')?<><h3>Build the right bag.</h3><PackBag key={order.id} {...{order,state,config,act,busy,onBagChange}}/></>:<><p>Food is ready. Carry it to the packing bench and assemble the order.</p><WalkButton id="packing" {...{position,move}}/></>)}
+    {order.status==='queued'&&<><p>Pick up this ticket at the pass. Accepting it reserves the ingredients.</p><WalkButton id="tickets" {...{position,move}}/><ActionButton disabled={!!busy || issues.length > 0} onClick={() => nearSpot(position, 'tickets') ? act('/orders/' + order.id + '/prepare') : move(SPOTS.tickets)}>
+      {issues.length ? 'Ticket blocked' : nearSpot(position, 'tickets') ? 'Accept ticket & start cooking' : 'Walk to ticket pass'}
+    </ActionButton></>}
+    {order.status==='preparing'&&<><p>Visit every required cooking station. Each task takes two game seconds.</p><div className="station-checklist">{stations.map(id=><button key={id} className={done.includes(id)?'task-done':''} onClick={()=>move(SPOTS[id])}><span>{done.includes(id)?'✓':'⌖'}</span>{SPOTS[id].name}<small>{done.includes(id)?'Completed':'Walk here'}</small></button>)}</div>{!stations.length&&<WalkButton id="packing" {...{position,move}}>Walk to drinks / packing</WalkButton>}{cooking?<div className="cooking-progress" role="status"><b>Working at {SPOTS[cooking].name}…</b><div><span/></div></div>:<ActionButton disabled={!!busy || issues.length > 0} onClick={() => atStation || (!stations.length && nearSpot(position, 'packing')) ? cook(atStation || 'packing') : move(SPOTS[next])}>
+      {issues.length ? 'Station blocked' : atStation ? 'Prepare at ' + SPOTS[atStation].name : !stations.length && nearSpot(position, 'packing') ? 'Get drinks ready' : 'Walk to ' + SPOTS[next].name}
+    </ActionButton>}<small>Station completion is shared across devices. These actions simulate cooking.</small></>}
+    {order.status==='packing'&&(nearSpot(position,'packing')?<><h3>Build the right bag.</h3><PackBag key={order.id} {...{order,state,config,act,busy,onBagChange}}/></>:<><p>Food is ready. Carry it to the packing bench and assemble the order.</p><ActionButton onClick={() => move(SPOTS.packing)}>Walk to packing bench</ActionButton></>)}
+    {cooking && <ActionButton disabled>Cooking at {SPOTS[cooking].name}</ActionButton>}
+    {order.delivery && ['ready','out_for_delivery','delivered'].includes(order.status) && <ActionButton onClick={() => { location.hash = 'delivery-simulator'; }}>Open courier map</ActionButton>}
     {order.delivery&&['ready','out_for_delivery','delivered'].includes(order.status)&&<p>Courier status: <b>{STATUS[order.status]}</b>. Use the <a href="#delivery-simulator">main delivery simulator ↑</a> for pickup and the journey to the house.</p>}
-    {order.status==='ready'&&!order.delivery&&<><div className="completion-stamp">✓<span>VERIFIED.<br/>READY FOR PICKUP.</span></div><p>The customer collects from their screen.</p><div className="reference-card"><small>MATCH AT HANDOFF</small><b>{order.pickupCode}</b></div><button disabled={!!busy} onClick={()=>act('/orders/'+order.id+'/recheck')}>Reopen bag for a recheck</button></>}
+    {order.status==='ready'&&!order.delivery&&<><div className="completion-stamp">✓<span>VERIFIED.<br/>READY FOR PICKUP.</span></div><p>The customer collects from their screen.</p><div className="reference-card"><small>MATCH AT HANDOFF</small><b>{order.pickupCode}</b></div><ActionButton disabled>Awaiting guest pickup</ActionButton><button disabled={!!busy} onClick={()=>act('/orders/'+order.id+'/recheck')}>Reopen bag for a recheck</button></>}
     {order.status==='collected'&&<><div className="completion-stamp">✓<span>PICKUP<br/>CONFIRMED.</span></div><p>The matching bag was collected.</p></>}
     {order.status==='cancelled'&&<p>This unstarted ticket was cancelled. Its stock is available again.</p>}
     {(order.status==='preparing'&&!atStation&&!cooking&&stations.length>0)&&<WalkButton id={next} {...{position,move}}>Go to next task →</WalkButton>}
@@ -356,54 +392,68 @@ export function OwnerMission({state,act,busy}) {
   const scenario=state.scenarios.find(s=>s.id===selected)||(state.orders.length ? state.scenarios[0] : undefined);
   const challenges=[{name:'One worker down',icon:'👨‍🍳',detail:'Leo cannot make the shift',changes:{absentWorker:'leo'}},{name:'No chicken today',icon:'📦',detail:'An ingredient delivery is missing',changes:{shortage:'chicken'}},{name:'Lunch rush',icon:'⚡',detail:'Six more tickets arrive at once',changes:{rush:true}},{name:'Fryer breakdown',icon:'🔧',detail:'A station goes offline',changes:{equipmentDown:'fryer'}}];
   async function challenge(c) {setRunning(c.name);const r=await act('/scenarios',{name:c.name,changes:c.changes},'Comparing recovery strategies…');if(r)setSelected(r.scenarioId);setRunning('');}
-  return <aside className="mission-panel owner-mission"><div className="mission-eyebrow">MISSION CONTROL / OWNER</div><h2>Keep the kitchen moving.</h2><p>Watch live tickets on the floor, or choose a challenge and compare how the team recovers.</p><div className="challenge-grid">{challenges.map(c=><button key={c.name} disabled={!!busy||!!running} onClick={()=>challenge(c)}><span>{c.icon}</span><b>{c.name}</b><small>{c.detail}</small></button>)}</div>{scenario&&<div className="challenge-result"><small>SELECTED CHALLENGE</small><select aria-label="Game saved challenge" value={scenario.id} onChange={e=>setSelected(e.target.value)}>{state.scenarios.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select><div className="score-comparison"><div><small>FIXED PLAN</small><b>{scenario.comparison.baseline.metrics.completed}<span>/{scenario.comparison.baseline.metrics.total}</span></b><small>orders completed</small></div><div><small>RECOVERY</small><b>{scenario.comparison.recovery.metrics.completed}<span>/{scenario.comparison.recovery.metrics.total}</span></b><small>orders completed</small></div></div><div className="row"><button disabled={!!busy} onClick={()=>act('/playback',{scenarioId:scenario.id,policy:'fixed'})}>▶ Fixed</button><button className="game-primary" disabled={!!busy} onClick={()=>act('/playback',{scenarioId:scenario.id,policy:'adaptive'})}>▶ Recovery</button></div><button className="walk-button" disabled={!!busy||scenario.snapshot.version!==state.version} onClick={()=>act('/scenarios/'+scenario.id+'/apply')}>Apply challenge to live kitchen</button>{scenario.snapshot.version!==state.version&&<small>Live kitchen changed. Choose a challenge again to compare a fresh snapshot.</small>}<small>Replay previews a separate 60-minute simulation; live tickets stay unchanged.</small></div>}{state.playback&&<button onClick={()=>act('/playback',{action:'stop'})}>Stop replay / show live floor</button>}<details><summary>Reset for another round</summary><p>This clears all live tickets and restores resources on both Macs. You start again with zero orders. Saved challenges remain.</p><button className="danger" disabled={!!busy} onClick={async()=>{const r=await act('/reset');if(r)setSelected('');}}>Reset demo restaurant</button></details></aside>;
+  return <aside className="mission-panel owner-mission"><div className="mission-eyebrow">MISSION CONTROL / OWNER</div><h2>Keep the kitchen moving.</h2><p>Watch live tickets on the floor, or choose a challenge and compare how the team recovers.</p><ActionButton disabled={!!busy || !!running} onClick={() => scenario ? location.hash = 'replay-hud' : challenge(challenges[2])}>{scenario ? 'Open replay room' : 'Run a rush drill'}</ActionButton><div className="challenge-grid">{challenges.map(c=><button key={c.name} disabled={!!busy||!!running} onClick={()=>challenge(c)}><span>{c.icon}</span><b>{c.name}</b><small>{c.detail}</small></button>)}</div>{scenario&&<div className="challenge-result"><small>SELECTED CHALLENGE</small><select aria-label="Game saved challenge" value={scenario.id} onChange={e=>setSelected(e.target.value)}>{state.scenarios.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select><div className="score-comparison"><div><small>FIXED PLAN</small><b>{scenario.comparison.baseline.metrics.completed}<span>/{scenario.comparison.baseline.metrics.total}</span></b><small>orders completed</small></div><div><small>RECOVERY</small><b>{scenario.comparison.recovery.metrics.completed}<span>/{scenario.comparison.recovery.metrics.total}</span></b><small>orders completed</small></div></div><div className="row"><button disabled={!!busy} onClick={()=>act('/playback',{scenarioId:scenario.id,policy:'fixed'})}>▶ Fixed</button><button className="game-primary" disabled={!!busy} onClick={()=>act('/playback',{scenarioId:scenario.id,policy:'adaptive'})}>▶ Recovery</button></div><button className="walk-button" disabled={!!busy||scenario.snapshot.version!==state.version} onClick={()=>act('/scenarios/'+scenario.id+'/apply')}>Apply challenge to live kitchen</button>{scenario.snapshot.version!==state.version&&<small>Live kitchen changed. Choose a challenge again to compare a fresh snapshot.</small>}<small>Replay previews a separate 60-minute simulation; live tickets stay unchanged.</small></div>}{state.playback&&<button onClick={()=>act('/playback',{action:'stop'})}>Stop replay / show live floor</button>}<details><summary>Reset for another round</summary><p>This clears all live tickets and restores resources on both Macs. You start again with zero orders. Saved challenges remain.</p><button className="danger" disabled={!!busy} onClick={async()=>{const r=await act('/reset');if(r)setSelected('');}}>Reset demo restaurant</button></details></aside>;
 }
 
 function DisplayMission({state,config}) {
-  return <aside className="mission-panel"><div className="mission-eyebrow">SPECTATOR / LIVE FEED</div><h2>Every ticket has a journey.</h2><p>Orders, packing failures, pickup, and disruptions sync from the two players.</p><div className="spectator-counts">{Object.entries(STATUS).map(([key,label])=><div key={key}><b>{state.orders.filter(o=>o.status===key).length}</b><span>{label}</span></div>)}</div><h3>Latest events</h3><div className="game-events">{state.events.slice(0,5).map(e=><p key={e.id}>{e.message}</p>)}</div></aside>;
+  return <aside className="mission-panel"><div className="mission-eyebrow">SPECTATOR / LIVE FEED</div><h2>Every ticket has a journey.</h2><p>Orders, packing failures, pickup, and disruptions sync from the two players.</p><ActionButton onClick={() => { location.hash = 'replay-hud'; }}>Open replay room</ActionButton><div className="spectator-counts">{Object.entries(STATUS).map(([key,label])=><div key={key}><b>{state.orders.filter(o=>o.status===key).length}</b><span>{label}</span></div>)}</div><h3>Latest events</h3><div className="game-events">{state.events.slice(0,5).map(e=><p key={e.id}>{e.message}</p>)}</div></aside>;
 }
 
-export default function Game({role,state,config,act,busy,live,compact=false,keyboardActive=true,onActivate,showOwnerControls=true}) {
-  const [selected,setSelected]=useState(()=>role==='customer'?localStorage.getItem('nova-game-order')||'':new URLSearchParams(location.search).get('order')||localStorage.getItem('nova-game-kitchen-order')||'');
-  const presence=usePlayerPresence(role,live,role==='customer'?selected:'');
-  const {position,walking,move,step}=useWalk(role,presence.publish);
-  const [interact,setInteract]=useState(0);
-  const [interactionHint,setInteractionHint]=useState('');
-  const order=state.orders.find(o=>o.id===selected)||(role==='kitchen'?[...state.orders].reverse().find(o=>!['collected','delivered','cancelled'].includes(o.status)):undefined);
-  useEffect(()=>{if(role==='kitchen'&&order&&!state.orders.some(o=>o.id===selected))setSelected(order.id);},[role,order?.id,selected,state.orders]);
-  const active=state.orders.filter(o=>!['collected','delivered','cancelled'].includes(o.status)).length, collected=state.orders.filter(o=>['collected','delivered'].includes(o.status)).length, flagged=state.orders.filter(o=>o.status==='packing'&&o.verification?.status==='red').length;
-  function interactNearby() {
-    setInteract(n=>n+1);
-    const nearby=(role==='kitchen'?KITCHEN_SPOTS:role==='owner'?['office',...KITCHEN_SPOTS,...CUSTOMER_SPOTS]:CUSTOMER_SPOTS).find(id=>nearSpot(position,id));
-    setInteractionHint(role==='customer'?'Menu and pickup actions work anywhere. Keep exploring freely.':nearby?SPOTS[nearby].name+' reached. Use the action in your mission panel.':'Walk to a marked spot to interact.');
+export default function Game({ role, state, config, act, busy, live, compact = false, keyboardActive = true, screenActive = true, onActivate }) {
+  const [selected, setSelected] = useState(() => role === 'customer' ? localStorage.getItem('nova-game-order') || '' : new URLSearchParams(location.search).get('order') || localStorage.getItem('nova-game-kitchen-order') || '');
+  const presence = usePlayerPresence(role, live, role === 'customer' ? selected : '');
+  const { position, walking, move, step } = useWalk(role, presence.publish);
+  const [interact, setInteract] = useState(0);
+  const [actionHost, setActionHost] = useState(null);
+  const actionButton = useRef(null);
+  const order = state.orders.find(entry => entry.id === selected) ||
+    (role === 'kitchen' ? [...state.orders].reverse().find(entry => !['collected', 'delivered', 'cancelled'].includes(entry.status)) : undefined);
+  useEffect(() => {
+    if (role === 'kitchen' && order && !state.orders.some(entry => entry.id === selected)) setSelected(order.id);
+  }, [role, order?.id, selected, state.orders]);
+
+  function selectTicket(id) {
+    setSelected(id);
+    localStorage.setItem('nova-game-kitchen-order', id);
   }
-  return <section className="game-experience" onPointerDown={onActivate} onFocusCapture={onActivate}>
-    <div className="game-titlebar">
-      <div>
-        <div className="game-title-meta">
-          <span className="game-kicker">NOVA / RESTAURANT SIMULATOR</span>
-          <a href={`#view-guide-${role}`}>View guide ↓</a>
-          <a href="#delivery-simulator">Delivery map ↓</a>
-        </div>
-        <h1>{role==='customer'?'A lunch run. A live kitchen.':role==='kitchen'?'Take the ticket. Make it happen.':role==='owner'?'Run the shift. Handle the unexpected.':'The whole restaurant, in motion.'}</h1>
+
+  function interactNearby() {
+    const button = actionButton.current;
+    if (button) { if (!button.disabled) button.click(); return; }
+    setInteract(current => current + 1);
+  }
+
+  return <section className={`game-experience world-stage${compact ? ' compact-game' : ''}`} onPointerDown={onActivate} onFocusCapture={onActivate}>
+    <div className="world-scene" onPointerMove={event => {
+      if (event.pointerType !== 'mouse') return;
+      event.currentTarget.style.setProperty('--world-x', `${(event.clientX / window.innerWidth - .5) * 16}px`);
+      event.currentTarget.style.setProperty('--world-y', `${(event.clientY / window.innerHeight - .5) * 10}px`);
+    }}>
+    <Restaurant {...{ role, state, config, selected: order, position, walking, move, step, live }}
+      active={screenActive} keyboardActive={keyboardActive && screenActive} playerId={presence.id} onInteract={interactNearby}/>
+    <div className="world-label">
+      <span className="hud-eyebrow">Nova / Service floor</span><h1>{VIEW_HUD[role].title}</h1>
+      <a href={`#view-guide-${role}`}>Controls & guide ↓</a>
+    </div>
+    <div className="world-sidebar">
+      <div className="mission-column">
+        <div className="mission-hud"><span aria-hidden="true">◆</span>{VIEW_HUD[role].panel}</div>
+        <ActionHost.Provider value={{ host: actionHost, button: actionButton, active: keyboardActive && screenActive }}>
+          {role === 'customer' && <CustomerMission {...{ state, config, act, busy, position, move, selected, setSelected, interact, setInteract, live }}/>}
+          {role === 'kitchen' && <KitchenMission key={order?.id} {...{ state, config, act, busy, position, move, order, interact, setInteract, live }} onBagChange={presence.publishBag}/>}
+          {role === 'owner' && <OwnerMission {...{ state, act, busy }}/>}
+          {role === 'display' && <DisplayMission {...{ state, config }}/>}
+        </ActionHost.Provider>
       </div>
-      <div className="shift-score">
-        <div><b>{active}</b><small>IN PLAY</small></div>
-        <div><b>{collected}</b><small>SERVED</small></div>
-        <div className={flagged?'score-warning':''}><b>{flagged}</b><small>BAG FLAGS</small></div>
-      </div>
+      <MissionRail orders={state.orders} catalog={config.catalog} selected={order?.id} onSelect={role === 'kitchen' ? selectTicket : undefined} status={STATUS} active={screenActive}/>
+      {(role==='owner'||role==='display')&&<div className="live-bags">{live.players.filter(p=>p.packing&&state.orders.some(o=>o.id===p.packing.orderId&&o.status==='packing')).map(p=><div className="live-bag-preview" key={p.id}><b>Live packing · {p.packing.orderId}</b><p>{Object.entries(p.packing.counts).filter(([,n])=>n>0).map(([sku,n])=>FOOD[sku]+' ×'+n).join(' · ')||'Empty bag'}</p></div>)}</div>}
     </div>
-    <div className={'game-layout' + (role==='owner'&&!showOwnerControls?' overview-layout':'')}><div className="game-world-column"><Restaurant {...{role,state,config,selected:order,position,walking,move,step,live,keyboardActive}} playerId={presence.id} onInteract={interactNearby}/><div className={"presence-indicator "+(live.presenceError?"error":"")}><i className="live-dot"/>{live.presenceError||("Live movement · "+live.players.length+" connected players · syncs across devices")}</div>{interactionHint&&<div className="interaction-hint" role="status">{interactionHint}</div>}
-      {role==='kitchen'&&<div className="ticket-strip"><div className="ticket-strip-title"><b>LIVE TICKETS</b><small>Newest first · select an order to play</small></div><div>{[...state.orders].reverse().map(o=><button key={o.id} className={o.id===order?.id?'active-ticket':''} onClick={()=>{setSelected(o.id);localStorage.setItem('nova-game-kitchen-order',o.id);}}><b>{o.id}</b><span>{o.customer}</span><small>{STATUS[o.status]}</small>{o.verification?.status==='red'&&<i>!</i>}</button>)}</div></div>}
-      {role!=='kitchen'&&<div className="floor-legend"><span><i className="legend-you"/>Your player</span><span><i className="legend-staff"/>Kitchen team</span><span>● Customers reflect shared order stages</span><small>Player movement, tickets, packing, resources, and courier progress sync across devices.</small></div>}
-      {(role==='owner'||role==='display')&&<div className="live-order-lane">{[...state.orders].reverse().slice(0,8).map(o=><div key={o.id}><span>{o.id} · {o.customer}</span><b>{STATUS[o.status]}</b><small>{Object.entries(o.items).map(([sku,n])=>FOOD[sku]+'×'+n).join(' ')}</small></div>)}</div>}
+    <div className="world-radar"><MiniMap {...{ state, live, position }} active={screenActive}/></div>
+    {keyboardActive && <div className="world-hotbar">
+      <div className="hotbar-action"><span className="hud-eyebrow">Next action</span><div ref={setActionHost} className="action-slot"><span className="action-standby">Check the mission panel</span></div></div>
+      <span className="hotbar-keys"><kbd>WASD</kbd> Walk <kbd>Q</kbd> Screens <kbd>1–5</kbd> Switch <kbd>Tab</kbd> Focus</span>
+    </div>}
     </div>
-      {role==='customer'&&<CustomerMission {...{state,config,act,busy,position,move,selected,setSelected,interact,setInteract,live}}/>}
-      {role==='kitchen'&&<KitchenMission key={order?.id} {...{state,config,act,busy,position,move,order,interact,setInteract,live}} onBagChange={presence.publishBag}/>}
-      {role==='owner'&&showOwnerControls&&<OwnerMission {...{state,act,busy}}/>}
-      {role==='display'&&<DisplayMission {...{state,config}}/>}
-    </div>
-    {(role==='owner'||role==='display')&&<div className="live-bags">{live.players.filter(p=>p.packing&&state.orders.some(o=>o.id===p.packing.orderId&&o.status==='packing')).map(p=><div className="live-bag-preview" key={p.id}><b>Live packing · {p.packing.orderId}</b><p>{Object.entries(p.packing.counts).filter(([,n])=>n>0).map(([sku,n])=>FOOD[sku]+' ×'+n).join(' · ')||'Empty bag'}</p></div>)}</div>}
-    <PageGuide role={role} compact={compact}/>
+    <div className="world-guide"><PageGuide role={role}/></div>
   </section>;
 }

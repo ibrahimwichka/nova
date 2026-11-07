@@ -133,7 +133,7 @@ function ReceiptPanel({ analysis, savedReceipts, ingredients, stateVersion, act,
   </section>;
 }
 
-export default function OperationsCenter({ state, config = {}, operations = {}, act, busy, role, category }) {
+export default function OperationsCenter({ state, config = {}, operations = {}, act, busy, role, category, id = 'ai-operations' }) {
   const [staffMessage, setStaffMessage] = useState('');
   const ingredients = Object.entries(config.ingredients || {});
   const firstIngredient = ingredients[0]?.[0] || '';
@@ -174,7 +174,7 @@ export default function OperationsCenter({ state, config = {}, operations = {}, 
   const categoryTitles = { prep: ['Preparation', 'Review the next tickets and start a feasible order.'], inventory: ['Inventory & restocking', 'Track ingredients, receive stock, and review demand.'], staff: ['Team & equipment', 'Preview how the kitchen can cover an absence or outage.'], finance: ['Finances & receipts', 'Review shift figures and upload supplier receipts.'] };
   const title = categoryTitles[category];
   const showCard = name => !category || category === name;
-  return <section id="ai-operations" className={'operations-center' + (category ? ' is-categorized' : '')} aria-label="AI and kitchen operations"><div className="ops-title"><div><span className="ops-eyebrow">SHARED KITCHEN OPERATIONS</span><h2>{title?.[0] || (readOnly ? 'Operations overview' : 'Plan the shift. Review each action.')}</h2><p>{title?.[1] || (readOnly ? 'Live inventory alerts and simulated financial figures from the shared restaurant.' : 'Live stock counts, explicit AI analysis, and owner replenishment in one place.')}</p></div><span className="ops-live-label">Kitchen v{state.version}</span></div>
+  return <section id={id} className={'operations-center' + (category ? ' is-categorized' : '')} aria-label="AI and kitchen operations"><div className="ops-title"><div><span className="ops-eyebrow">SHARED KITCHEN OPERATIONS</span><h2>{title?.[0] || (readOnly ? 'Operations overview' : 'Plan the shift. Review each action.')}</h2><p>{title?.[1] || (readOnly ? 'Live inventory alerts and simulated financial figures from the shared restaurant.' : 'Live stock counts, explicit AI analysis, and owner replenishment in one place.')}</p></div><span className="ops-live-label">Kitchen v{state.version}</span></div>
     <section hidden={!!category && category !== 'inventory'} className={'ops-alerts ' + (alerts.length || requests.length ? 'has-alerts' : '')} aria-label="Owner stock notifications"><div className="ops-alert-heading"><h3>Owner stock notifications</h3><span role="status">{alerts.length} stock alert{alerts.length === 1 ? '' : 's'} · {requests.length} open request{requests.length === 1 ? '' : 's'}</span></div>
       <p className="ops-note">Shared in-app notifications update on both Macs. Replenishment records units that have actually arrived.</p>
       {!alerts.length && !requests.length && <p className="ops-all-clear">Stock is above the current alert thresholds. No open replenishment requests.</p>}

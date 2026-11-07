@@ -13,6 +13,7 @@ export default {
     }
     const asset = assets[url.pathname] || (!url.pathname.split('/').pop().includes('.') ? assets['/index.html'] : null);
     if (!asset) return new Response('Not found', { status: 404 });
-    return new Response(asset.content, { headers: { 'Content-Type': asset.type, 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cache-Control': url.pathname.startsWith('/assets/') ? 'public, max-age=31536000, immutable' : 'no-cache' } });
+    const content = asset.binary ? Uint8Array.from(atob(asset.content), char => char.charCodeAt(0)) : asset.content;
+    return new Response(content, { headers: { 'Content-Type': asset.type, 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cache-Control': url.pathname.startsWith('/assets/') ? 'public, max-age=31536000, immutable' : 'no-cache' } });
   },
 };

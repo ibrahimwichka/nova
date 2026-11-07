@@ -16,8 +16,7 @@ export function initialWorkspaceTab(role) {
   return 'floor';
 }
 
-export function WorkspaceTabs({ role, value, onChange, stockAlerts = 0 }) {
-  const tabs = WORKSPACE_TABS[role];
+export function WorkspaceTabs({ role, value, onChange, stockAlerts = 0, tabs = WORKSPACE_TABS[role] }) {
   function navigate(event, index) {
     let next;
     if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
