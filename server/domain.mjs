@@ -155,7 +155,7 @@ export function prepareOrder(state, orderId) {
     if (station && (!state.stations.find(s => s.id === station).available || !state.staff.some(s => s.available && s.skills.includes(station)))) fail(`No available capacity for ${station}. Try a recovery scenario.`, 409);
   }
   for (const [id, qty] of Object.entries(needs)) state.inventory[id] -= qty;
-  order.status = 'preparing'; order.revision += 1;
+  order.status = 'preparing'; order.revision += 1; order.gameStations = [];
   event(state, `${order.id}: preparation started in the simulation; ingredient stock reserved.`, 'info');
   return order;
 }
@@ -168,5 +168,19 @@ export function finishPreparation(state, orderId) {
   }
   order.status = 'packing'; order.revision++;
   event(state, `${order.id}: simulated preparation completed; sent to packing.`);
+  return order;
+}
+
+export function completeGameStation(state, orderId, station) {
+  const order = state.orders.find(o => o.id === orderId);
+  if (!order || order.status !== 'preparing') fail('Accept this ticket before working a station.', 409);
+  const required = [...new Set(Object.keys(order.items).map(sku => CATALOG[sku].station).filter(Boolean))];
+  if (!(required.length ? required : ['packing']).includes(station)) fail('This station is not needed for the selected ticket.');
+  if (order.gameStations?.includes(station)) fail('This station task is already complete.', 409);
+  if (!state.stations.find(s => s.id === station)?.available || !state.staff.some(w => w.available && w.skills.includes(station))) fail('This station needs available equipment and a qualified worker.', 409);
+  order.gameStations = [...(order.gameStations || []), station];
+  if (required.every(id => order.gameStations.includes(id))) finishPreparation(state, orderId);
+  else order.revision++;
+  event(state, order.id + ': game task completed at ' + station + '.', 'success');
   return order;
 }

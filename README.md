@@ -1,15 +1,17 @@
 # Nova Kitchen Lab
 
-A functional hackathon prototype for testing how orders, shortages, staffing, packing, and pickup connect. Two Macs are enough; no cameras or hardware purchases are required.
+A playable hackathon prototype for testing how orders, shortages, staffing, packing, and pickup connect. Two Macs are enough; no cameras or hardware purchases are required.
 
 ## Hosted testing
 
 Open the deployed site on both Macs. All views share one persisted restaurant and sync about every 1.5 seconds:
 
-- `/?view=owner`: inject disruptions, compare policies, manage resources, and replay drills.
-- `/?view=kitchen`: start/finish simulated preparation, verify packing, and confirm pickup.
-- `/?view=customer`: place sample orders and track their demo status.
-- `/?view=display`: read-only pipeline or scenario playback in another window.
+- `/?view=owner`: overlook the restaurant floor, choose challenge cards, and play fixed versus recovery plans.
+- `/?view=kitchen`: walk to the ticket pass and cooking stations, assemble a bag item by item, and verify it before handoff.
+- `/?view=customer`: walk in, choose from the menu, wait for the kitchen player, collect with a matching reference, and leave.
+- `/?view=display`: read-only restaurant floor, live tickets, and scenario playback in another window.
+
+Click the floor or a marked destination to walk. Focus the room and use **WASD / arrow keys** for manual movement; **E** interacts nearby. The mission panel gives the next action. Original dashboards, resource controls, QR codes, and optional camera checks remain under **Detailed controls & optional camera**.
 
 Sites hosting is private by default. Each viewer must sign in with an account allowed to view the Site. Role tabs are demonstration perspectives, not separate permission levels. All viewers work in the same restaurant.
 
@@ -35,6 +37,7 @@ For a production build, run `npm run build` and `npm start` (or `npm run start:l
 ## Included
 
 - Shared persisted orders: received, preparing, packing, ready, collected.
+- Interactive restaurant scene, collision-aware walking, customer menu, station tasks, and item-by-item game packing.
 - Ingredient reservations, staff skills, equipment availability, and explicit blocked states.
 - Absence, shortage, equipment-failure, and six-order-rush scenarios.
 - Fixed assignments versus cross-trained recovery under identical starting conditions.
@@ -45,13 +48,17 @@ For a production build, run `npm run build` and `npm start` (or `npm run start:l
 
 ## What is simulated
 
-Orders, recipes, staff, stock, durations, preparation, and disruptions are sample data. Preparation advances when a tester clicks the kitchen controls. Replay is a forecast animation and does not advance live orders. The model assumes one task per station and worker, fixed recipe durations, all-or-nothing ingredient reservation, and earliest-due work first. It is a heuristic comparison, not a globally optimal scheduler.
+Orders, recipes, staff, stock, durations, preparation, and disruptions are sample data. Game cooking takes two seconds per station and represents a manual simulation action, not a measurement of cooking time. Required station completion is saved on the shared order; packing begins after all required stations are complete. Drink-only orders use the packing station. Original detailed controls can still advance preparation directly.
 
-Camera checks evaluate visible components, not hidden ingredients, food safety, or sealed-bag contents. Manual counts and fixtures are labeled and are never described as AI observations. Pickup uses an order-specific, single-use reference. The app does not place real orders, charge customers, or dispatch couriers. An impossible shortage/outage remains unresolved.
+Avatar movement and an unfinished bag are local to a browser tab. Shared customer figures reflect order stages; this is not a multiplayer position server. Tickets, completed station tasks, bag-check results, stock, staffing, pickup, and replay synchronize across devices. Reopening or leaving a packing mission clears its local unfinished bag; check it again before handoff.
+
+Replay is a forecast animation and does not advance live orders. The model assumes one task per station and worker, fixed recipe durations, all-or-nothing ingredient reservation, and earliest-due work first. It is a heuristic comparison, not a globally optimal scheduler.
+
+Camera checks evaluate visible components, not hidden ingredients, food safety, or sealed-bag contents. Game bags, manual counts, and fixtures are labeled and are never described as AI observations. Pickup uses an order-specific, single-use reference. The app does not place real orders, charge customers, or dispatch couriers. An impossible shortage/outage remains unresolved.
 
 ## Optional iPhone check
 
-Use an iPhone paired with a Mac through Continuity Camera, choose it under **Kitchen -> Start camera**, capture one frame, and choose **Analyze image with OpenRouter**. Alternatively transfer a JPEG from the iPhone to the Mac and use **Upload photo**.
+Use an iPhone paired with a Mac through Continuity Camera, choose it under **Kitchen -> Detailed controls & optional camera -> Start camera**, capture one frame, and choose **Analyze image with OpenRouter**. Alternatively transfer a JPEG from the iPhone to the Mac and use **Upload photo**.
 
 Keep items visible on a tray before sealing the bag. Try a labeled/recognizable burger, two distinct fries portions, and a readable Sprite can. Unmarked containers or cups should produce uncertainty. Holding the phone for a still photo works; no dedicated mount is required. Camera capture is user-started and requests no microphone. Nova does not save frames; an image is sent to OpenRouter only when analysis is requested.
 
