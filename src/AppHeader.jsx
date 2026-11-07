@@ -1,4 +1,5 @@
 import React from 'react';
+import { RoleIcon } from './ShiftLaunch.jsx';
 import './presentation.css';
 
 const VIEW_DESCRIPTIONS = {
@@ -39,8 +40,11 @@ export default function AppHeader({ roles, view, onViewChange, connected, versio
               aria-current={view === key ? 'page' : undefined}
               onClick={() => onViewChange(key)}
             >
-              <b>{label}</b>
-              <small>{VIEW_DESCRIPTIONS[key]}</small>
+              <span className="role-icon"><RoleIcon role={key}/></span>
+              <span className="role-label">
+                <b>{label}</b>
+                <small>{VIEW_DESCRIPTIONS[key]}</small>
+              </span>
             </button>
           ))}
         </div>

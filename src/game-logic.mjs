@@ -39,6 +39,15 @@ export function findPath(role, start, target) {
   return [];
 }
 export const nearSpot = (position, id) => Math.abs(position.x - SPOTS[id].x) + Math.abs(position.y - SPOTS[id].y) <= 1;
+export function movementForKey(key) {
+  return { arrowup: [0,-1], w: [0,-1], arrowdown: [0,1], s: [0,1], arrowleft: [-1,0], a: [-1,0], arrowright: [1,0], d: [1,0] }[key.toLowerCase()] || null;
+}
+export function suggestedCustomerSpot(order) {
+  if (!order || ['cancelled','delivered'].includes(order.status)) return 'counter';
+  if (order.status === 'collected') return 'exit';
+  if (order.status === 'ready' && !order.delivery) return 'pickup';
+  return 'lounge';
+}
 export const requiredStations = (order, catalog) => [...new Set(Object.keys(order?.items || {}).map(sku => catalog[sku]?.station).filter(Boolean))];
 export function orderProblems(order, state, config) {
   if (!order || !['queued', 'preparing'].includes(order.status)) return [];

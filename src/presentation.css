@@ -5,8 +5,8 @@
 }
 
 .app-header {
-  background: #1e3a31;
-  border-color: #294b3f;
+  background: linear-gradient(110deg, #142921, #244639);
+  border-color: #4d6956;
   color: #fffdf5;
 }
 
@@ -46,9 +46,10 @@
   height: 37px;
   padding: 0;
   border-radius: 8px;
-  background: #f2c781;
+  background: #f7c880;
   color: #263e33;
   font-size: 21px;
+  box-shadow: 0 2px 0 #a97d4d;
 }
 
 .app-sync {
@@ -100,13 +101,34 @@
 }
 
 .role-switcher button {
-  display: grid;
-  gap: 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   min-height: 46px;
   padding: 5px 10px;
   border-radius: 8px;
   text-align: left;
   line-height: 1.2;
+}
+
+.role-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: #e9eddf;
+  color: #395945;
+}
+
+.role-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.role-label {
+  display: grid;
+  gap: 2px;
 }
 
 .role-switcher button b {
@@ -119,18 +141,32 @@
 }
 
 .role-switcher button[aria-current="page"] {
-  background: #e4eddf;
-  border-color: #8fa887;
-  box-shadow: inset 3px 0 #3e6b50;
-  color: #224e36;
+  background: #244638;
+  border-color: #244638;
+  box-shadow: inset 3px 0 #f3c27b;
+  color: #fff6e7;
 }
 
 .role-switcher button[aria-current="page"]:hover {
-  background: #dce9d8;
+  background: #2e5344;
+}
+
+.role-switcher button[aria-current="page"] small {
+  color: #d7e7d6;
+}
+
+.role-switcher button[aria-current="page"] .role-icon {
+  background: #d6a66a;
+  color: #172f24;
 }
 
 .game-mode-active {
   padding: clamp(14px, 2.2vw, 28px);
+  animation: scene-arrive 420ms cubic-bezier(.2, .78, .25, 1) both;
+}
+
+.game-mode-active:focus {
+  outline: none;
 }
 
 .game-experience .game-titlebar {
@@ -152,7 +188,7 @@
 
 .game-experience .game-kicker,
 .game-experience .mission-eyebrow {
-  color: #526756;
+  color: #47614f;
   font-size: 10px;
 }
 
@@ -163,8 +199,8 @@
 .game-experience .shift-score > div {
   min-width: 76px;
   padding: 8px;
-  background: #fffdf6;
-  border: 1px solid #d6dfd0;
+  background: linear-gradient(155deg, #fffdf6, #e7eddf);
+  border: 1px solid #cad8c9;
   border-radius: 8px;
 }
 
@@ -202,17 +238,160 @@
   outline-offset: 2px;
 }
 
+.game-experience .room-wrap {
+  border-color: #3a594e;
+  background: #223d33;
+  box-shadow: 0 9px 24px #193b2e25, 0 3px 0 #2446381c;
+}
+
 .game-experience .room-topline {
+  padding: 10px 14px;
+  background: linear-gradient(105deg, #193029, #2c4c3f);
+  color: #fff5e3;
+}
+
+.room-context,
+.room-hud {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 11px;
+  min-width: 0;
+}
+
+.room-context > b {
+  font-size: 13px;
+  line-height: 1.25;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.room-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 8px;
+  border: 1px solid #b8cfb15c;
+  border-radius: 5px;
+  background: #17322a;
+  color: #d9edda;
+  font: 700 9px/1.4 ui-monospace, monospace;
+  letter-spacing: .075em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.room-mode .live-dot {
+  background: #a7d3a6;
+  box-shadow: 0 0 0 2px #a7d3a62f;
+}
+
+.room-hud {
+  justify-content: flex-end;
+  color: #d3e4d3;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.room-hud > b {
+  color: #ffd48d;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.room-hud small {
+  color: #d4daca;
   font-size: 10px;
 }
 
-.game-experience .room-bottomline,
+.waypoint-label {
+  color: #ffda99;
+  letter-spacing: 0;
+}
+
+.floor-waypoint {
+  pointer-events: none;
+}
+
+.floor-waypoint polyline {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.floor-waypoint-outline {
+  stroke: #343b2d;
+  stroke-width: 9;
+  opacity: .68;
+}
+
+.floor-waypoint-dash {
+  stroke: #ffe0a2;
+  stroke-width: 4;
+  stroke-dasharray: 6 11;
+}
+
+.replay-room .room-mode {
+  border-color: #f3bd7f88;
+  color: #ffd99d;
+}
+
+.replay-room .room-mode .live-dot {
+  background: #f5bd73;
+  box-shadow: 0 0 0 2px #f5bd7338;
+}
+
+.floor-progress {
+  display: block;
+  height: 4px;
+  border: 0;
+  border-radius: 0;
+  background: #4a5f4d;
+  accent-color: #f5bd73;
+}
+
+.floor-progress::-webkit-progress-bar {
+  background: #4a5f4d;
+}
+
+.floor-progress::-webkit-progress-value {
+  background: #f5bd73;
+}
+
+.game-experience .restaurant-room {
+  position: relative;
+  overflow: hidden;
+  background: #223d33;
+}
+
+.floor-sweep {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(108deg, transparent 36%, #f7d69985 49%, transparent 62%);
+  animation: floor-sweep 720ms ease-out both;
+}
+
+.game-experience .room-bottomline {
+  background: #f5f2e7;
+  color: #435f50;
+}
+
 .game-experience .ticket-strip-title small {
-  color: #526656;
+  color: #435f50;
 }
 
 .game-experience .mission-panel {
-  border-color: #cbd7c8;
+  border-color: #becfbe;
+  border-top: 3px solid #64846e;
+  background: linear-gradient(160deg, #fffdf6, #f4f6ea);
+  box-shadow: 0 7px 17px #284c3413;
+}
+
+.game-experience .mission-panel h2 {
+  letter-spacing: -.035em;
 }
 
 .game-experience .mission-panel > p,
@@ -223,6 +402,28 @@
 .game-experience .mission-panel .game-primary {
   min-height: 42px;
   font-size: 13px;
+  background: linear-gradient(100deg, #244a3d, #315d4a);
+  box-shadow: 0 3px 0 #193b30;
+}
+
+.game-experience .challenge-grid button {
+  border-color: #cdd8c7;
+  background: #fffdf4;
+}
+
+.game-experience .challenge-grid button:hover:not(:disabled) {
+  border-color: #a5b898;
+  background: #eaf0df;
+}
+
+@keyframes scene-arrive {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes floor-sweep {
+  from { transform: translateX(-100%); opacity: .8; }
+  to { transform: translateX(100%); opacity: 0; }
 }
 
 @media (max-width: 620px) {
@@ -239,9 +440,13 @@
   .role-switcher button {
     grid-column: span 2;
     min-height: 40px;
-    place-content: center;
+    justify-content: center;
     text-align: center;
     padding-inline: 6px;
+  }
+
+  .role-switcher .role-icon {
+    display: none;
   }
 
   .role-switcher button:nth-last-child(-n+2) {
@@ -250,5 +455,19 @@
 
   .game-experience .shift-score {
     flex-wrap: wrap;
+  }
+
+  .room-context {
+    display: grid;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-mode-active {
+    animation: none;
+  }
+
+  .floor-sweep {
+    display: none;
   }
 }

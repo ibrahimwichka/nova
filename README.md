@@ -16,7 +16,7 @@ Open the deployed site on both Macs. All views share one persisted restaurant. T
 - `/?view=display`: read-only restaurant floor, live tickets, courier trips, and scenario playback.
 - `/?view=split`: Customer and Owner together, with separate controls and shared moving players.
 
-Click the floor or a marked destination to walk. Focus the room and use **WASD / arrow keys** for manual movement; **E** interacts nearby. The mission panel gives the next action. Original dashboards, resource controls, QR codes, and optional camera checks remain under **Detailed controls & optional camera**.
+Use **WASD / arrow keys** to walk freely without focusing the floor; typing in form fields never moves your player. Click-to-walk and destination markers are optional, and a manual step interrupts an automatic walk. Customer ordering, pickup, and leaving do not require an exact location or force a route. The direction arrow suggests a destination. **E** opens the customer menu or collects a ready pickup; kitchen actions still use their stations. In split view, click a player panel or the **WASD: Customer / Owner** buttons to choose which player the keyboard controls. The mission panel gives the next action. Original dashboards, resource controls, QR codes, and optional camera checks remain under **Detailed controls & optional camera**.
 
 Sites hosting is private by default. Each viewer must sign in with an account allowed to view the Site. Role tabs are demonstration perspectives, not separate permission levels. All viewers work in the same restaurant.
 
@@ -58,6 +58,8 @@ Orders, recipes, staff, stock, durations, preparation, and disruptions are sampl
 Player paths and live packing counts are published through a separate shared presence table, independent of kitchen revisions. Other views animate those paths using server-synchronized time. Presence expires after 20 seconds without a heartbeat; closing a view removes its player. The unfinished bag is controlled by its kitchen tab and broadcast for observation. Reopening or leaving a packing mission clears it; check it again before handoff.
 
 Menu quantities follow the limiting ingredient after queued-ticket commitments and other cart items. The server rechecks the entire cart and rejects overselling. Accepting a ticket consumes its physical ingredients once. Minus removes one, × clears an item type, and Clear all empties the cart or bag. Queued tickets can be edited or cancelled; accepted tickets are locked.
+
+The full-width **Delivery simulator** is a main stage on every role page, above the restaurant floor. Select an order tab to follow its courier and complete the handoff or receipt steps; the Demo screen remains read-only.
 
 Delivery is an accelerated simulation with fictional destinations: Maple House (1.2 km, 18 game seconds), Park House (2.8 km, 30 seconds), and River House (4.5 km, 45 seconds). A ready bag triggers a six-second courier approach. A matching-reference pickup starts the persisted trip; arrival enables explicit receipt confirmation. Pickup and delivery are distinct statuses. Refreshing or opening another device keeps the same clock. These are illustrative ETAs, not routing or traffic estimates.
 
