@@ -1,0 +1,39 @@
+1
+00:00:00,000 --> 00:00:04,000
+Zindabad Dash: a connected restaurant prototype
+
+2
+00:00:04,000 --> 00:00:09,000
+Customer: walk to the counter and choose an order
+
+3
+00:00:09,000 --> 00:00:19,000
+Kitchen: accept the same ticket and prepare the meal
+
+4
+00:00:19,000 --> 00:00:25,000
+Real AI check: Sprite is missing, so approval stays blocked
+
+5
+00:00:25,000 --> 00:00:31,000
+Next: the corrected clear bag matches all three items
+
+6
+00:00:31,000 --> 00:00:56,000
+Verified pickup reference and simulated delivery to the house
+
+7
+00:00:56,000 --> 00:01:04,000
+At the doorstep: a second photo checks the delivered contents
+
+8
+00:01:04,000 --> 00:01:10,000
+All delivered items match. The customer confirms receipt
+
+9
+00:01:10,000 --> 00:01:15,000
+Owner: inventory estimates and a restock workflow
+
+10
+00:01:15,000 --> 00:01:21,000
+Owner: replay disruptions and compare recovery plans
