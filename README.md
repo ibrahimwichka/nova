@@ -8,12 +8,13 @@ New and reset restaurants start with **zero orders**. Orders appear only when a 
 
 Every view has an expanded **How this page works** guide with its role, steps, controls, and explanation of what syncs. Collapse it once you know the flow.
 
-Open the deployed site on both Macs. All views share one persisted restaurant and sync about every 1.5 seconds:
+Open the deployed site on both Macs. All views share one persisted restaurant. The client polls the lightweight live endpoint every 400 ms after the previous response; synchronized movement paths and courier timestamps animate between updates:
 
 - `/?view=owner`: overlook the restaurant floor, choose challenge cards, and play fixed versus recovery plans.
 - `/?view=kitchen`: walk to the ticket pass and cooking stations, assemble a bag item by item, and verify it before handoff.
 - `/?view=customer`: walk in, choose from the menu, wait for the kitchen player, collect with a matching reference, and leave.
-- `/?view=display`: read-only restaurant floor, live tickets, and scenario playback in another window.
+- `/?view=display`: read-only restaurant floor, live tickets, courier trips, and scenario playback.
+- `/?view=split`: Customer and Owner together, with separate controls and shared moving players.
 
 Click the floor or a marked destination to walk. Focus the room and use **WASD / arrow keys** for manual movement; **E** interacts nearby. The mission panel gives the next action. Original dashboards, resource controls, QR codes, and optional camera checks remain under **Detailed controls & optional camera**.
 
@@ -54,9 +55,13 @@ For a production build, run `npm run build` and `npm start` (or `npm run start:l
 
 Orders, recipes, staff, stock, durations, preparation, and disruptions are sample data. Game cooking takes two seconds per station and represents a manual simulation action, not a measurement of cooking time. Required station completion is saved on the shared order; packing begins after all required stations are complete. Drink-only orders use the packing station. Original detailed controls can still advance preparation directly.
 
-Avatar movement and an unfinished bag are local to a browser tab. Shared customer figures reflect order stages; this is not a multiplayer position server. Tickets, completed station tasks, bag-check results, stock, staffing, pickup, and replay synchronize across devices. Reopening or leaving a packing mission clears its local unfinished bag; check it again before handoff.
+Player paths and live packing counts are published through a separate shared presence table, independent of kitchen revisions. Other views animate those paths using server-synchronized time. Presence expires after 20 seconds without a heartbeat; closing a view removes its player. The unfinished bag is controlled by its kitchen tab and broadcast for observation. Reopening or leaving a packing mission clears it; check it again before handoff.
 
-Replay is a forecast animation and does not advance live orders. The model assumes one task per station and worker, fixed recipe durations, all-or-nothing ingredient reservation, and earliest-due work first. It is a heuristic comparison, not a globally optimal scheduler.
+Menu quantities follow the limiting ingredient after queued-ticket commitments and other cart items. The server rechecks the entire cart and rejects overselling. Accepting a ticket consumes its physical ingredients once. Minus removes one, × clears an item type, and Clear all empties the cart or bag. Queued tickets can be edited or cancelled; accepted tickets are locked.
+
+Delivery is an accelerated simulation with fictional destinations: Maple House (1.2 km, 18 game seconds), Park House (2.8 km, 30 seconds), and River House (4.5 km, 45 seconds). A ready bag triggers a six-second courier approach. A matching-reference pickup starts the persisted trip; arrival enables explicit receipt confirmation. Pickup and delivery are distinct statuses. Refreshing or opening another device keeps the same clock. These are illustrative ETAs, not routing or traffic estimates.
+
+Replay is a forecast animation and does not advance live orders. The model assumes one task per station and worker, fixed recipe durations, all-or-nothing ingredient reservation, and earliest-due work first. Same-recipe units within one ticket are scheduled as one station batch so large orders do not create thousands of tasks. It is a heuristic comparison, not a globally optimal scheduler.
 
 Camera checks evaluate visible components, not hidden ingredients, food safety, or sealed-bag contents. Game bags, manual counts, and fixtures are labeled and are never described as AI observations. Pickup uses an order-specific, single-use reference. The app does not place real orders, charge customers, or dispatch couriers. An impossible shortage/outage remains unresolved.
 

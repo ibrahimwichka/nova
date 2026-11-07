@@ -5,6 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { initialState, fail } from './domain.mjs';
+import { memoryPresenceStore } from './presence.mjs';
 import { createApi } from './api.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DATA_DIR = process.env.NOVA_DATA_DIR || path.join(ROOT, '.data');
@@ -15,7 +16,7 @@ try { state = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : initia
 catch { throw new Error('Saved state could not be read. Preserve .data/state.json and restore a valid copy before restarting.'); }
 const port = Number(process.env.PORT || 3000);
 const host = process.env.HOST || '127.0.0.1';
-const api = createApi({ env: process.env, extraConfig: { lanEnabled: host === '0.0.0.0', lanUrls: Object.values(os.networkInterfaces()).flat().filter(i => i && i.family === 'IPv4' && !i.internal).map(i => `http://${i.address}:${port}`) }, store: {
+const api = createApi({ presence: memoryPresenceStore(), env: process.env, extraConfig: { lanEnabled: host === '0.0.0.0', lanUrls: Object.values(os.networkInterfaces()).flat().filter(i => i && i.family === 'IPv4' && !i.internal).map(i => `http://${i.address}:${port}`) }, store: {
   async load() { return structuredClone(state); },
   async save(next, revision) {
     if ((state.revision || 1) !== revision) fail('Another device updated the restaurant. Please retry your action.', 409);

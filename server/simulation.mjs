@@ -6,7 +6,7 @@ export function simulate(input, policy = 'fixed', horizon = 60) {
   const stock = clone(state.inventory);
   const workers = state.staff.filter(w => w.available).map(w => ({ ...w, free: 0 }));
   const stations = state.stations.map(s => ({ ...s, free: 0 }));
-  const orders = state.orders.filter(o => o.status !== 'collected');
+  const orders = state.orders.filter(o => !['collected', 'cancelled', 'out_for_delivery', 'delivered'].includes(o.status));
   const tasks = [];
   const results = [];
   const canStaff = station => workers.some(w => w.skills.includes(station) && (policy === 'adaptive' || w.home === station));
@@ -29,11 +29,9 @@ export function simulate(input, policy = 'fixed', horizon = 60) {
       for (const [sku, count] of Object.entries(order.items)) {
         const recipe = CATALOG[sku];
         if (!recipe.station) continue;
-        for (let n = 0; n < count; n++) {
-          const id = `${order.id}:${sku}:${n}`;
-          tasks.push({ id, orderId: order.id, label: recipe.name, station: recipe.station, duration: recipe.duration, due: order.due, arrival: order.arrival, dependencies: [], start: null, end: null, workerId: null });
-          result.taskIds.push(id);
-        }
+        const id = order.id + ':' + sku;
+        tasks.push({ id, orderId: order.id, label: recipe.name + ' ×' + count, station: recipe.station, duration: recipe.duration * count, due: order.due, arrival: order.arrival, dependencies: [], start: null, end: null, workerId: null });
+        result.taskIds.push(id);
       }
     }
     const id = `${order.id}:pack`;

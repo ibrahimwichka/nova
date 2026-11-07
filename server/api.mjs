@@ -1,4 +1,7 @@
-import { CATALOG, INGREDIENTS, clone, initialState, snapshot, fail, event, validateChanges, disrupt, demoObservation, recordVerification, readyOrder, collectOrder, prepareOrder, finishPreparation, completeGameStation } from './domain.mjs';
+import { CATALOG, INGREDIENTS, clone, initialState, snapshot, fail, event, validateChanges, disrupt, demoObservation, recordVerification, readyOrder, collectOrder, prepareOrder, finishPreparation, completeGameStation, makeDelivery, confirmDelivery } from './domain.mjs';
+import { availableInventory, stockIssue } from '../shared/stock.mjs';
+import { HOMES } from '../shared/delivery.mjs';
+import { validatePresence } from './presence.mjs';
 import { simulate, compareScenario } from './simulation.mjs';
 import { inspectImage, explainScenario } from './vision.mjs';
 const randomUUID = () => crypto.randomUUID();
@@ -12,9 +15,25 @@ async function body(req) {
   if (text.length > 7_000_000) fail('This request is too large.', 413);
   try { return JSON.parse(text || '{}'); } catch { fail('Request contains invalid JSON.'); }
 }
-export function createApi({ store, env = {}, extraConfig = {} }) {
+function validateItems(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw) || Object.keys(raw).some(k => !CATALOG[k])) fail('Choose items from the menu.');
+  if (Object.values(raw).some(n => !Number.isSafeInteger(n) || n < 0)) fail('Quantities must be non-negative whole numbers.');
+  const items = Object.fromEntries(Object.entries(raw).filter(([, n]) => n > 0));
+  if (!Object.keys(items).length) fail('Choose at least one item, or cancel the ticket.');
+  return items;
+}
+export function createApi({ store, presence, env = {}, extraConfig = {} }) {
   return async function handle(request) {
     try {
+      const requestUrl = new URL(request.url);
+      if (request.method === 'POST' && requestUrl.pathname === '/api/presence') {
+        if (request.headers.get('origin') && new URL(request.headers.get('origin')).host !== requestUrl.host || request.headers.get('sec-fetch-site') === 'cross-site') fail('Cross-origin changes are not supported.', 403);
+        if (!presence) fail('Shared movement is unavailable.', 503);
+        const input = await body({ headers: Object.fromEntries(request.headers), web: request });
+        if (input.leave === true) { if (!/^[a-zA-Z0-9-]{8,80}$/.test(input.id || '')) fail('Invalid player.'); await presence.remove(input.id); return json({}, 200, { ok: true }); }
+        await presence.put(validatePresence(input));
+        return json({}, 200, { ok: true, serverTime: Date.now() });
+      }
       let state = await store.load();
       async function update(fn, live = true) {
         const next = clone(state);
@@ -25,11 +44,12 @@ export function createApi({ store, env = {}, extraConfig = {} }) {
         state = next;
         return result;
       }
-      const config = () => ({ visionConfigured: Boolean(env.OPENROUTER_API_KEY), model: env.OPENROUTER_MODEL || 'google/gemini-2.5-flash', catalog: CATALOG, ingredients: INGREDIENTS, lanUrls: [], ...extraConfig });
+      const config = () => ({ visionConfigured: Boolean(env.OPENROUTER_API_KEY), model: env.OPENROUTER_MODEL || 'google/gemini-2.5-flash', catalog: CATALOG, ingredients: INGREDIENTS, homes: HOMES, lanUrls: [], ...extraConfig });
       const payload = () => ({ state, config: config() });
       function getOrder(id) { const order = state.orders.find(o => o.id === id); if (!order) fail('Order not found.', 404); return order; }
 async function api(req, res, pathname) {
   if (req.method === 'GET' && pathname === '/api/state') return json(res, 200, payload());
+  if (req.method === 'GET' && pathname === '/api/live') return json(res, 200, { ...(Number(requestUrl.searchParams.get('revision')) !== state.revision ? payload() : {}), players: presence ? await presence.list() : [], revision: state.revision, serverTime: Date.now() });
   if (req.method === 'GET' && pathname === '/api/health') return json(res, 200, { ok: true, visionConfigured: config().visionConfigured });
   if (req.method !== 'POST') fail('Route not found.', 404);
   if (req.headers.origin && new URL(req.headers.origin).host !== req.headers.host) fail('Cross-origin changes are not supported.', 403);
@@ -57,19 +77,30 @@ async function api(req, res, pathname) {
   if (pathname === '/api/orders') {
     const name = typeof input.customer === 'string' ? input.customer.trim().slice(0, 40) : '';
     if (!name) fail('Enter a name for this sample order.');
-    if (!input.items || typeof input.items !== 'object' || Array.isArray(input.items) || Object.keys(input.items).some(k => !CATALOG[k])) fail('Choose items from the sample menu.');
-    const items = Object.fromEntries(Object.entries(input.items).filter(([, n]) => n > 0));
-    if (!Object.keys(items).length || Object.values(items).some(n => !Number.isInteger(n) || n < 1 || n > 6)) fail('Choose between 1 and 6 of each item.');
+    const items = validateItems(input.items);
+    const shortage = stockIssue(items, availableInventory(state, CATALOG), CATALOG);
+    if (shortage) fail(INGREDIENTS[shortage.id] + ': ' + shortage.required + ' needed, ' + shortage.available + ' available after existing tickets.', 409);
+    const delivery = input.fulfillment === 'delivery' ? makeDelivery(input.homeId) : null;
+    if (input.fulfillment && !['delivery', 'pickup'].includes(input.fulfillment)) fail('Choose pickup or delivery.');
     if (state.orders.length >= 50) fail('This demo has reached 50 orders. Reset the restaurant to start another run.');
     const id = `C${randomUUID().slice(0, 5).toUpperCase()}`;
-    await update(next => { next.orders.push({ id, customer: name, source: 'Customer · sample', due: 18, arrival: 0, status: 'queued', revision: 1, items, note: 'Placed from the customer view.' }); next.appliedPlan = null; event(next, `${id}: ${name} placed an order.`, 'success'); });
+    await update(next => { next.orders.push({ id, customer: name, source: 'Customer · sample', due: 18, arrival: 0, status: 'queued', revision: 1, items, fulfillment: delivery ? 'delivery' : 'pickup', ...(delivery ? { delivery } : {}), note: 'Placed from the customer view.' }); next.appliedPlan = null; event(next, `${id}: ${name} placed an order.`, 'success'); });
     return json(res, 201, { ...payload(), orderId: id });
   }
-  const orderRoute = pathname.match(/^\/api\/orders\/([^/]+)\/(prepare|finish|game-cook|verify|ready|collect|recheck)$/);
+  const orderRoute = pathname.match(/^\/api\/orders\/([^/]+)\/(prepare|finish|game-cook|verify|ready|collect|deliver|edit|cancel|recheck)$/);
   if (orderRoute) {
     const [, id, action] = orderRoute;
     const order = getOrder(id);
-    if (action === 'verify') {
+    if (action === 'edit' || action === 'cancel') {
+      if (order.status !== 'queued') fail('Editing closes once the kitchen accepts this ticket.', 409);
+      if (action === 'cancel') await update(next => { const o = next.orders.find(o => o.id === id); o.status = 'cancelled'; o.revision++; next.appliedPlan = null; event(next, id + ': customer cancelled the unstarted ticket.'); });
+      else {
+        const items = validateItems(input.items);
+        const shortage = stockIssue(items, availableInventory(state, CATALOG, id), CATALOG);
+        if (shortage) fail(INGREDIENTS[shortage.id] + ': only ' + shortage.available + ' available for this edit.', 409);
+        await update(next => { const o = next.orders.find(o => o.id === id); o.items = items; o.revision++; next.appliedPlan = null; event(next, id + ': customer updated the items.'); });
+      }
+    } else if (action === 'verify') {
       if (order.status !== 'packing') fail('Move this order to packing first.', 409);
       const revision = order.revision;
       let observation;
@@ -88,6 +119,7 @@ async function api(req, res, pathname) {
     else if (action === 'game-cook') await update(next => { completeGameStation(next, id, input.station); next.appliedPlan = null; });
     else if (action === 'ready') await update(next => readyOrder(next, id, input.verificationId));
     else if (action === 'collect') await update(next => collectOrder(next, id, input.code));
+    else if (action === 'deliver') await update(next => confirmDelivery(next, id));
     else await update(next => { const o = next.orders.find(o => o.id === id); if (o.status !== 'ready' && o.status !== 'packing') fail('Only an active packing or ready order can be rechecked.', 409); o.status = 'packing'; o.revision++; delete o.verification; delete o.pickupCode; delete o.readyAt; event(next, `${id} returned to packing for a fresh check.`); });
     return json(res, 200, payload());
   }

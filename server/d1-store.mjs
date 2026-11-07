@@ -2,9 +2,12 @@ import { initialState, fail } from './domain.mjs';
 export function createD1Store(db) {
   return {
     async load() {
-      const seed = initialState();
-      await db.prepare('INSERT OR IGNORE INTO demo_state (id, revision, payload) VALUES (?, ?, ?)').bind('main', 1, JSON.stringify(seed)).run();
-      const row = await db.prepare('SELECT payload FROM demo_state WHERE id = ?').bind('main').first();
+      let row = await db.prepare('SELECT payload FROM demo_state WHERE id = ?').bind('main').first();
+      if (!row) {
+        const seed = initialState();
+        await db.prepare('INSERT OR IGNORE INTO demo_state (id, revision, payload) VALUES (?, ?, ?)').bind('main', 1, JSON.stringify(seed)).run();
+        row = await db.prepare('SELECT payload FROM demo_state WHERE id = ?').bind('main').first();
+      }
       if (!row) fail('The shared restaurant could not be opened. Please retry.', 503);
       return JSON.parse(row.payload);
     },

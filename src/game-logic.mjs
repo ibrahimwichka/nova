@@ -9,11 +9,13 @@ export const SPOTS = {
   prep: { x: 16, y: 4, name: 'Cold prep', icon: 'wrap' },
   packing: { x: 20, y: 6, name: 'Packing bench', icon: 'bag' },
   tickets: { x: 11, y: 6, name: 'Order tickets', icon: 'ticket' },
+  office: { x: 13, y: 8, name: 'Owner desk', icon: 'ticket' },
 };
 export const CUSTOMER_SPOTS = ['counter', 'lounge', 'pickup', 'exit'];
 export const KITCHEN_SPOTS = ['tickets', 'grill', 'fryer', 'prep', 'packing'];
 export function walkable(role, x, y) {
   if (!Number.isInteger(x) || !Number.isInteger(y) || x < 1 || x > 22) return false;
+  if (role === 'owner') return walkable('customer', x, y) || walkable('kitchen', x, y) || y === 7 && x >= 12 && x <= 14;
   if (role === 'customer') return y >= 8 && y <= 13 && !((x >= 9 && x <= 10 || x >= 14 && x <= 15) && y >= 10 && y <= 11);
   if (role === 'kitchen') return y >= 1 && y <= 6 && !(y <= 3 && [3, 4, 5, 9, 10, 11, 15, 16, 17].includes(x)) && !(x >= 21 && y >= 5);
   return false;

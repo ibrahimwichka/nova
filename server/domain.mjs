@@ -1,5 +1,6 @@
 const randomUUID = () => crypto.randomUUID();
 const pickupToken = () => [...crypto.getRandomValues(new Uint8Array(3))].map(n => n.toString(16).padStart(2, '0')).join('').toUpperCase();
+import { HOMES, COURIER_APPROACH_MS, deliveryProgress } from '../shared/delivery.mjs';
 
 export const CATALOG = {
   burger: { name: 'Burger', short: 'BG', color: '#c88b48', ingredients: { buns: 1, patties: 1 }, station: 'grill', duration: 5 },
@@ -79,7 +80,7 @@ export function disrupt(input, rawChanges) {
 export function validateObservation(value) {
   if (!value || !['clear', 'uncertain'].includes(value.quality) || typeof value.occluded !== 'boolean' || !Array.isArray(value.items) || value.items.length > 24) fail('The vision response could not be validated. Please retry or use a manual check.', 502);
   for (const item of value.items) {
-    if (!item || ![...Object.keys(CATALOG), 'unknown'].includes(item.sku) || !Number.isInteger(item.count) || item.count < 0 || item.count > 20 || !['clear', 'uncertain'].includes(item.certainty)) fail('The vision response contains an invalid observation.', 502);
+    if (!item || ![...Object.keys(CATALOG), 'unknown'].includes(item.sku) || !Number.isInteger(item.count) || item.count < 0 || item.count > 1000 || !['clear', 'uncertain'].includes(item.certainty)) fail('The vision response contains an invalid observation.', 502);
   }
   if (!Array.isArray(value.notes) || value.notes.length > 10 || value.notes.some(n => typeof n !== 'string' || n.length > 500)) fail('The vision notes could not be validated.', 502);
   return value;
@@ -119,6 +120,7 @@ export function readyOrder(state, orderId, verificationId) {
   order.revision += 1;
   order.pickupCode = pickupToken();
   order.readyAt = new Date().toISOString();
+  if (order.delivery) { order.delivery.courierAssignedAt = Date.now(); order.delivery.courierArrivesAt = Date.now() + COURIER_APPROACH_MS; }
   event(state, `${order.id} ready for pickup (${check.mode} verification).`, 'success');
   return order;
 }
@@ -127,11 +129,27 @@ export function collectOrder(state, orderId, code) {
   if (!order || order.status !== 'ready') fail('This order is not ready or was already collected.', 409);
   if (typeof code !== 'string' || code.trim().toUpperCase() !== order.pickupCode) fail('Pickup reference does not match. Keep this order at the station.', 409);
   if (Date.now() - Date.parse(order.readyAt) > 900_000) fail('Pickup reference expired. Return the order to packing for a fresh check.', 409);
-  order.status = 'collected';
+  if (order.delivery && deliveryProgress(order).stage !== 'at_restaurant') fail('The courier is still travelling to the restaurant.', 409);
+  order.status = order.delivery ? 'out_for_delivery' : 'collected';
   order.revision += 1;
   order.collectedAt = new Date().toISOString();
+  if (order.delivery) { order.delivery.departedAt = Date.now(); order.delivery.arrivesAt = Date.now() + order.delivery.travelSeconds * 1000; }
   delete order.pickupCode;
-  event(state, `${order.id} collected with the matching reference.`, 'success');
+  event(state, order.id + (order.delivery ? ': courier picked up the verified bag. Heading to ' + order.delivery.name + '.' : ' collected with the matching reference.'), 'success');
+  return order;
+}
+export function makeDelivery(homeId) {
+  const home = HOMES.find(h => h.id === homeId);
+  if (!home) fail('Choose one of the demo delivery homes.');
+  return { ...home, courier: 'Nova courier', simulated: true };
+}
+export function confirmDelivery(state, orderId) {
+  const order = state.orders.find(o => o.id === orderId);
+  if (!order?.delivery || order.status !== 'out_for_delivery') fail('This order is not out for delivery.', 409);
+  if (deliveryProgress(order).stage !== 'at_home') fail('The courier has not reached the house yet.', 409);
+  order.status = 'delivered'; order.revision++;
+  order.delivery.confirmedAt = Date.now();
+  event(state, order.id + ': delivery confirmed at ' + order.delivery.name + '.', 'success');
   return order;
 }
 export function prepareOrder(state, orderId) {

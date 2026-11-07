@@ -1,0 +1,101 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { initialState, CATALOG, fail } from '../server/domain.mjs';
+import { createApi } from '../server/api.mjs';
+import { memoryPresenceStore, validatePresence, d1PresenceStore } from '../server/presence.mjs';
+import { availableInventory, itemLimit } from '../shared/stock.mjs';
+import { deliveryProgress } from '../shared/delivery.mjs';
+import { presencePosition } from '../shared/presence.mjs';
+import { DatabaseSync } from 'node:sqlite';
+import { readFileSync } from 'node:fs';
+function service() {
+  let state=initialState();
+  const presence=memoryPresenceStore();
+  const store={async load(){return structuredClone(state);},async save(next,revision){if(state.revision!==revision)fail('Concurrent update',409);state=next;}};
+  const a=createApi({store,presence}), b=createApi({store,presence});
+  async function call(api,path,input) {
+    const r=await api(new Request('https://nova.test/api'+path,input===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)}));
+    return {status:r.status,body:await r.json()};
+  }
+  return {a,b,call,get:()=>state};
+}
+test('stock permits more than six, protects queued commitments, supports removal, and releases cancelled demand',async()=>{
+  const {a,b,call}=service();
+  const first=await call(a,'/orders',{customer:'Large order',items:{burger:9}});
+  assert.equal(first.status,201);
+  const id=first.body.orderId;
+  assert.equal(itemLimit('burger',{},availableInventory(first.body.state,CATALOG),CATALOG),3);
+  assert.equal((await call(b,'/orders',{customer:'Too many',items:{burger:4}})).status,409);
+  const edited=await call(a,'/orders/'+id+'/edit',{items:{burger:2,fries:1}});
+  assert.deepEqual(edited.body.state.orders[0].items,{burger:2,fries:1});
+  assert.equal(itemLimit('burger',{},availableInventory(edited.body.state,CATALOG),CATALOG),10);
+  assert.equal((await call(a,'/orders/'+id+'/cancel',{})).status,200);
+  assert.equal((await call(b,'/orders',{customer:'All remaining stock',items:{burger:12}})).status,201);
+  assert.equal((await call(b,'/orders',{customer:'Bad negative',items:{fries:-1}})).status,400);
+});
+test('the last available items cannot be promised twice by concurrent clients',async()=>{
+  const {a,b,call}=service();
+  const result=await Promise.all([call(a,'/orders',{customer:'One',items:{burger:10}}),call(b,'/orders',{customer:'Two',items:{burger:10}})]);
+  assert.deepEqual(result.map(r=>r.status).sort(),[201,409]);
+});
+test('movement is shared without changing kitchen revisions; stale sequences cannot rewind a player',async()=>{
+  const {a,b,call}=service();
+  const player={id:'player-customer-123',role:'customer',sequence:2,path:[{x:3,y:13},{x:4,y:13},{x:5,y:13}],startedAt:Date.now()};
+  const before=(await call(a,'/state')).body.state.revision;
+  assert.equal((await call(a,'/presence',player)).status,200);
+  await call(a,'/presence',{...player,sequence:1,path:[{x:3,y:13}]});
+  const seen=await call(b,'/live?revision='+before);
+  assert.equal(seen.body.players[0].sequence,2);
+  assert.equal(seen.body.state,undefined,'unchanged kitchen payload is not repeated');
+  assert.equal(seen.body.revision,before,'movement cannot invalidate a kitchen plan');
+  assert.equal((await call(a,'/presence',{...player,sequence:3,path:[{x:4,y:4}]})).status,400);
+  assert.equal((await call(a,'/presence',{...player,role:'owner',sequence:3,path:[{x:13,y:8},{x:13,y:7},{x:13,y:6}]})).status,200);
+  assert.equal((await call(a,'/presence',{id:player.id,leave:true})).status,200);
+  assert.equal((await call(b,'/live')).body.players.length,0);
+  const point=presencePosition({...player,startedAt:1000},1057.5);
+  assert.equal(point.x,3.5);assert.ok(point.walking);
+  const heartbeat=validatePresence({...player,startedAt:1000},10000);
+  assert.equal(heartbeat.startedAt,1000,'heartbeat must not replay a completed walk');
+  assert.equal(presencePosition(heartbeat,10000).x,5);
+  const bag=await call(a,'/presence',{id:'kitchen-bag-player',role:'kitchen',sequence:1,path:[{x:20,y:6}],packing:{orderId:'test-order',counts:{burger:2}}});
+  assert.equal(bag.status,200);
+  assert.deepEqual((await call(b,'/live')).body.players[0].packing.counts,{burger:2});
+  assert.throws(()=>validatePresence({...player,path:[{x:3,y:13},{x:8,y:13}]}));
+});
+test('delivery requires a verified bag, courier arrival, travel to the house, and explicit receipt',async()=>{
+  const {a,b,call,get}=service();
+  const placed=await call(a,'/orders',{customer:'Delivery guest',items:{sprite:1},fulfillment:'delivery',homeId:'maple'});
+  const id=placed.body.orderId;
+  await call(b,'/orders/'+id+'/prepare',{});
+  await call(b,'/orders/'+id+'/game-cook',{station:'packing'});
+  const checked=await call(b,'/orders/'+id+'/verify',{mode:'demo',fixture:'complete'});
+  const verified=checked.body.state.orders[0].verification.id;
+  await call(b,'/orders/'+id+'/ready',{verificationId:verified});
+  const order=get().orders[0],code=order.pickupCode;
+  assert.equal(deliveryProgress(order).stage,'to_restaurant');
+  assert.equal((await call(b,'/orders/'+id+'/collect',{code})).status,409);
+  order.delivery.courierAssignedAt-=6100;order.delivery.courierArrivesAt-=6100;
+  assert.equal((await call(b,'/orders/'+id+'/collect',{code:'WRONG'})).status,409);
+  assert.equal((await call(b,'/orders/'+id+'/collect',{code})).status,200);
+  const travelling=get().orders[0];
+  assert.equal(travelling.status,'out_for_delivery');
+  assert.equal(deliveryProgress(travelling).stage,'on_way');
+  assert.equal((await call(a,'/orders/'+id+'/deliver',{})).status,409);
+  travelling.delivery.departedAt=Date.now()-20000;travelling.delivery.arrivesAt=Date.now()-1;
+  assert.equal(deliveryProgress(travelling).stage,'at_home');
+  assert.equal((await call(a,'/orders/'+id+'/deliver',{})).status,200);
+  assert.equal((await call(b,'/state')).body.state.orders[0].status,'delivered');
+  assert.equal((await call(a,'/orders/'+id+'/deliver',{})).status,409);
+});
+test('hosted presence persists across D1 clients and expires inactive players',async()=>{
+  const sql=new DatabaseSync(':memory:');
+  sql.exec(readFileSync(new URL('../drizzle/0001_game_presence.sql',import.meta.url),'utf8'));
+  const db={prepare(query){return{bind(...args){return{async run(){return sql.prepare(query).run(...args);},async all(){return{results:sql.prepare(query).all(...args)};}};}};}};
+  const a=d1PresenceStore(db),b=d1PresenceStore(db);
+  const p=validatePresence({id:'database-player-123',role:'customer',sequence:4,path:[{x:3,y:13}]},1000);
+  await a.put(p);await a.put({...p,sequence:3,path:[{x:4,y:13}]});
+  assert.equal((await b.list(2000))[0].sequence,4);
+  assert.equal((await b.list(22000)).length,0);
+  await b.remove(p.id);assert.equal((await a.list(2000)).length,0);
+  sql.close();
+});
