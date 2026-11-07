@@ -1,0 +1,1 @@
+Synthetic images generated for Zindabad Dash demo testing. Complete: one burger, one fries, one Sprite. Missing-drink: one burger, one fries, no drink. Not real customer orders. Generation prompts and test evidence are in docs/test-data/README.md and docs/FINAL_PROMPT_AUDIT.md.

@@ -116,7 +116,7 @@ export default function ShiftLaunch({ roles, view, onViewChange, onEnter, connec
       <header className="launch-header">
         <div className="launch-brand">
           <span className="launch-brand-mark" aria-hidden="true">N</span>
-          <b>Nova Kitchen Lab</b>
+          <b>Zindabad Dash</b>
         </div>
         <div className={`launch-sync${connected ? ' is-online' : ''}`} role="status">
           <span aria-hidden="true"/>

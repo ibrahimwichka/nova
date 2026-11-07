@@ -2508,3 +2508,4 @@
     min-height: 335px;
   }
 }
+@media(max-width:680px){.platform-brand>div>small{display:none}.platform-brand b{font-size:19px;letter-spacing:-.7px}}

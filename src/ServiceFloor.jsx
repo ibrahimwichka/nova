@@ -311,7 +311,7 @@ export default function ServiceFloor({
               mission
             ) : (
               <Panel className="arrival-card">
-                <span className="eyebrow">WELCOME TO NOVA</span>
+                <span className="eyebrow">WELCOME TO ZINDABAD DASH</span>
                 <h2>A better experience starts at the counter.</h2>
                 <p>
                   Step into the customer's shoes. Walk up, choose a meal and

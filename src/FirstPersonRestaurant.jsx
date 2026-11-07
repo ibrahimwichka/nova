@@ -170,15 +170,15 @@ export default function FirstPersonRestaurant({
         box(6.4, 1.42, 7.75, 0.55, 0.12, 0.45, "#264139");
         const terminal = box(6.4, 1.74, 7.55, 0.9, 0.52, 0.08, "#223b35");
         terminal.rotation.x = -0.12;
-        sign("NOVA\nWELCOME", 6.4, 1.76, 7.61, 0.77, 0.39, {
+        sign("ZINDABAD\nWELCOME", 6.4, 1.76, 7.61, 0.77, 0.39, {
           color: "#c4d8c8",
           ink: "#234b3c",
           size: 100,
         });
-        sign("NOVA", 6.4, 4.25, 5.8, 3.3, 0.57, {
+        sign("ZINDABAD DASH", 6.4, 4.25, 5.8, 3.3, 0.57, {
           color: "#244c40",
           ink: "#f0ead6",
-          size: 145,
+          size: 75,
         });
         sign("FRESH FOOD. ONE CONNECTED KITCHEN.", 6.4, 3.91, 5.81, 5.4, 0.18, {
           color: "#244c40",
@@ -485,7 +485,7 @@ export default function FirstPersonRestaurant({
           ? "At the order counter"
           : walking
             ? "Walking to the counter"
-            : "Inside Nova Kitchen"}
+            : "Inside Zindabad Dash"}
       </div>
       <div className="scene-instructions">
         <span>

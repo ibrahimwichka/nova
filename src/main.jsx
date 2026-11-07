@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import QRCode from 'qrcode';
 import './style.css';
 import { OwnerMission } from './Game.jsx';
-import ShiftLaunch from './ShiftLaunch.jsx';
+import ShiftLaunch from './CosmicLaunch.jsx';
 import World from './World.jsx';
 import { playbackMinute } from '../shared/replay.mjs';
 import Packing from './Packing.jsx';
@@ -13,10 +13,11 @@ const STAGES = ['queued', 'preparing', 'packing', 'ready', 'out_for_delivery', '
 const LABEL = { queued: 'Received', preparing: 'Preparing', packing: 'Packing', ready: 'Ready for pickup', collected: 'Collected', out_for_delivery: 'Out for delivery', delivered: 'Delivered', cancelled: 'Cancelled' };
 const EMPTY = { burger: 0, wrap: 0, fries: 0, sprite: 0 };
 const ROLE = { owner: 'Owner / scenarios', kitchen: 'Kitchen / packing', customer: 'Customer', display: 'Demo screen', split: 'Live split view' };
-const SEEN_SHIFT_INTRO = 'nova-shift-intro-seen';
+const SEEN_SHIFT_INTRO = 'zindabad-dash-intro-seen';
 
 function shouldShowShiftIntro() {
   const query = new URLSearchParams(location.search);
+  if(query.get('intro')==='1')return true;
   if (query.has('order') || query.has('code')) return false;
   try {
     return sessionStorage.getItem(SEEN_SHIFT_INTRO) !== '1';
@@ -77,7 +78,7 @@ function App() {
   }
   function role(next) { setView(next); const url = new URL(location.href); url.searchParams.set('view', next); url.hash=''; history.replaceState(null, '', url); setError(''); }
   if (showLaunch) return <ShiftLaunch roles={ROLE} view={view} onViewChange={role} onEnter={enterFloor} connected={connected} hasSnapshot={hasSnapshot}/>;
-  if (!data) return <main className="loading"><h1>Nova Kitchen Lab</h1><p>{connected ? 'Opening the restaurant…' : 'Connecting to the shared restaurant…'}</p><button onClick={refresh}>Retry connection</button></main>;
+  if (!data) return <main className="loading"><h1>Zindabad Dash</h1><p>{connected ? 'Opening the restaurant…' : 'Connecting to the shared restaurant…'}</p><button onClick={refresh}>Retry connection</button></main>;
   const { state, config } = data;
   const active = state.orders.filter(o => !['collected','delivered','cancelled'].includes(o.status)).length;
   const live = { players, clockOffset, presenceError, onPresenceError: setPresenceError };

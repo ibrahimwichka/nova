@@ -1,0 +1,314 @@
+
+> nova-kitchen@0.1.0 test
+> node --experimental-sqlite --test tests/*.test.mjs
+
+TAP version 13
+# Subtest: all five adapters return validated advisory data without mutating evidence
+    # Subtest: prep
+    ok 1 - prep
+      ---
+      duration_ms: 37.567666
+      ...
+    # Subtest: inventory
+    ok 2 - inventory
+      ---
+      duration_ms: 0.56925
+      ...
+    # Subtest: staff
+    ok 3 - staff
+      ---
+      duration_ms: 1.329125
+      ...
+    # Subtest: finance
+    ok 4 - finance
+      ---
+      duration_ms: 1.777208
+      ...
+    # Subtest: receipt
+    ok 5 - receipt
+      ---
+      duration_ms: 2.242916
+      ...
+    1..5
+ok 1 - all five adapters return validated advisory data without mutating evidence
+  ---
+  duration_ms: 44.922584
+  ...
+# Subtest: injected fetch receives the selected model, reasoning, strict schema and data separated from instructions
+ok 2 - injected fetch receives the selected model, reasoning, strict schema and data separated from instructions
+  ---
+  duration_ms: 0.7985
+  ...
+# Subtest: prep cannot recommend starting blocked, nonqueued or nonexistent orders
+ok 3 - prep cannot recommend starting blocked, nonqueued or nonexistent orders
+  ---
+  duration_ms: 6.135666
+  ...
+# Subtest: prep candidates further restrict starts and duplicate or invented actions are rejected
+ok 4 - prep candidates further restrict starts and duplicate or invented actions are rejected
+  ---
+  duration_ms: 2.858542
+  ...
+# Subtest: empty order and inventory evidence permits honest empty recommendations
+ok 5 - empty order and inventory evidence permits honest empty recommendations
+  ---
+  duration_ms: 1.538834
+  ...
+# Subtest: inventory validates known ingredients, integer estimates, confidence and uniqueness
+ok 6 - inventory validates known ingredients, integer estimates, confidence and uniqueness
+  ---
+  duration_ms: 5.480167
+  ...
+# Subtest: staff parsing accepts ambiguity but rejects unknown people, stations and invented skills
+ok 7 - staff parsing accepts ambiguity but rejects unknown people, stations and invented skills
+  ---
+  duration_ms: 1.132333
+  ...
+# Subtest: finance exposes only computed finance evidence and rejects invented numerical figures
+ok 8 - finance exposes only computed finance evidence and rejects invented numerical figures
+  ---
+  duration_ms: 0.386292
+  ...
+# Subtest: receipt extraction sends a separate image, preserves currency and never returns the raw image
+ok 9 - receipt extraction sends a separate image, preserves currency and never returns the raw image
+  ---
+  duration_ms: 0.287833
+  ...
+# Subtest: uncertain receipt values remain a low-confidence review draft
+ok 10 - uncertain receipt values remain a low-confidence review draft
+  ---
+  duration_ms: 0.41425
+  ...
+# Subtest: receipt rejects unknown ingredient IDs, invalid dates, amounts, currencies and extra fields
+ok 11 - receipt rejects unknown ingredient IDs, invalid dates, amounts, currencies and extra fields
+  ---
+  duration_ms: 6.837
+  ...
+# Subtest: receipt requires a bounded supported image before making a paid request
+ok 12 - receipt requires a bounded supported image before making a paid request
+  ---
+  duration_ms: 0.210208
+  ...
+# Subtest: missing key, unsupported kinds and malformed caller evidence fail before fetch
+ok 13 - missing key, unsupported kinds and malformed caller evidence fail before fetch
+  ---
+  duration_ms: 0.171958
+  ...
+# Subtest: OpenRouter HTTP, network and timeout failures remain errors without leaking provider details
+ok 14 - OpenRouter HTTP, network and timeout failures remain errors without leaking provider details
+  ---
+  duration_ms: 0.315334
+  ...
+# Subtest: malformed, missing, truncated and oversized provider outputs never become usable advice
+ok 15 - malformed, missing, truncated and oversized provider outputs never become usable advice
+  ---
+  duration_ms: 6.281917
+  ...
+# Subtest: a fresh restaurant and reset both have zero orders; refresh preserves customer orders
+ok 16 - a fresh restaurant and reset both have zero orders; refresh preserves customer orders
+  ---
+  duration_ms: 40.408833
+  ...
+# Subtest: two clients share the full order -> preparation -> packing -> pickup flow
+ok 17 - two clients share the full order -> preparation -> packing -> pickup flow
+  ---
+  duration_ms: 10.6225
+  ...
+# Subtest: preview/replay are isolated, apply rejects stale snapshots, restart preserves drills
+ok 18 - preview/replay are isolated, apply rejects stale snapshots, restart preserves drills
+  ---
+  duration_ms: 6.597375
+  ...
+# Subtest: invalid inputs and cross-origin changes are rejected; no API key leaks
+ok 19 - invalid inputs and cross-origin changes are rejected; no API key leaks
+  ---
+  duration_ms: 2.507584
+  ...
+# Subtest: concurrent clients cannot silently overwrite each other
+ok 20 - concurrent clients cannot silently overwrite each other
+  ---
+  duration_ms: 0.833417
+  ...
+# Subtest: recovery covers a missing worker without violating worker/station capacity
+ok 21 - recovery covers a missing worker without violating worker/station capacity
+  ---
+  duration_ms: 27.747459
+  ...
+# Subtest: shortages and equipment outages stay explicitly unresolved
+ok 22 - shortages and equipment outages stay explicitly unresolved
+  ---
+  duration_ms: 1.954042
+  ...
+# Subtest: scenario replay is deterministic; repeated rushes have unique IDs
+ok 23 - scenario replay is deterministic; repeated rushes have unique IDs
+  ---
+  duration_ms: 7.212125
+  ...
+# Subtest: reservation is once-only and blocked preparation never consumes stock
+ok 24 - reservation is once-only and blocked preparation never consumes stock
+  ---
+  duration_ms: 0.656333
+  ...
+# Subtest: packing distinguishes complete, missing, extras and uncertainty
+ok 25 - packing distinguishes complete, missing, extras and uncertainty
+  ---
+  duration_ms: 0.80275
+  ...
+# Subtest: fresh matching evidence and a single-use matching reference are required
+ok 26 - fresh matching evidence and a single-use matching reference are required
+  ---
+  duration_ms: 1.768208
+  ...
+# Subtest: stale packing evidence cannot mark ready
+ok 27 - stale packing evidence cannot mark ready
+  ---
+  duration_ms: 1.062
+  ...
+# Subtest: Workspace priorities follow reachable cooking routes and surface blocked work
+ok 28 - Workspace priorities follow reachable cooking routes and surface blocked work
+  ---
+  duration_ms: 2.885
+  ...
+# Subtest: workspace routes preserve category deep links
+ok 29 - workspace routes preserve category deep links
+  ---
+  duration_ms: 0.176542
+  ...
+# Subtest: first-person movement follows camera heading on the existing walkable grid
+ok 30 - first-person movement follows camera heading on the existing walkable grid
+  ---
+  duration_ms: 9.941667
+  ...
+# Subtest: every player destination is reachable without crossing furniture or the kitchen divider
+ok 31 - every player destination is reachable without crossing furniture or the kitchen divider
+  ---
+  duration_ms: 5.215833
+  ...
+# Subtest: game preparation requires every needed station and rejects duplicates, irrelevant work, and unavailable capacity
+ok 32 - game preparation requires every needed station and rejects duplicates, irrelevant work, and unavailable capacity
+  ---
+  duration_ms: 4.084667
+  ...
+# Subtest: two game clients share station progress, bag errors, verification and matching pickup
+ok 33 - two game clients share station progress, bag errors, verification and matching pickup
+  ---
+  duration_ms: 51.745
+  ...
+# Subtest: stock alerts count queued commitments exactly once and resolve after a received restock
+ok 34 - stock alerts count queued commitments exactly once and resolve after a received restock
+  ---
+  duration_ms: 45.790334
+  ...
+# Subtest: restock supports partial receipts and rejects overflow, unknown items, and negative quantities
+ok 35 - restock supports partial receipts and rejects overflow, unknown items, and negative quantities
+  ---
+  duration_ms: 5.623875
+  ...
+# Subtest: AI preparation can start only a recommended fresh feasible ticket
+ok 36 - AI preparation can start only a recommended fresh feasible ticket
+  ---
+  duration_ms: 4.012916
+  ...
+# Subtest: AI inventory review creates an owner request without manufacturing stock
+ok 37 - AI inventory review creates an owner request without manufacturing stock
+  ---
+  duration_ms: 1.134
+  ...
+# Subtest: AI staffing creates a preview; existing stale protection guards applying it
+ok 38 - AI staffing creates a preview; existing stale protection guards applying it
+  ---
+  duration_ms: 3.674167
+  ...
+# Subtest: reviewed receipts update matched costs only, keep currencies separate, and never restock
+ok 39 - reviewed receipts update matched costs only, keep currencies separate, and never restock
+  ---
+  duration_ms: 3.305708
+  ...
+# Subtest: logged waste decreases on-hand once and feeds explicit financial evidence
+ok 40 - logged waste decreases on-hand once and feeds explicit financial evidence
+  ---
+  duration_ms: 1.001208
+  ...
+# Subtest: old stored restaurants gain operations defaults without losing their tickets
+ok 41 - old stored restaurants gain operations defaults without losing their tickets
+  ---
+  duration_ms: 0.127625
+  ...
+# Subtest: a long AI request preserves newer kitchen changes and cannot queue stale replenishment
+ok 42 - a long AI request preserves newer kitchen changes and cannot queue stale replenishment
+  ---
+  duration_ms: 1.62775
+  ...
+# (node:80373) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: stock permits more than six, protects queued commitments, supports removal, and releases cancelled demand
+ok 43 - stock permits more than six, protects queued commitments, supports removal, and releases cancelled demand
+  ---
+  duration_ms: 42.633417
+  ...
+# Subtest: the last available items cannot be promised twice by concurrent clients
+ok 44 - the last available items cannot be promised twice by concurrent clients
+  ---
+  duration_ms: 0.767334
+  ...
+# Subtest: movement is shared without changing kitchen revisions; stale sequences cannot rewind a player
+ok 45 - movement is shared without changing kitchen revisions; stale sequences cannot rewind a player
+  ---
+  duration_ms: 3.096916
+  ...
+# Subtest: delivery requires a verified bag, courier arrival, travel to the house, and explicit receipt
+ok 46 - delivery requires a verified bag, courier arrival, travel to the house, and explicit receipt
+  ---
+  duration_ms: 16.943208
+  ...
+# Subtest: hosted presence persists across D1 clients and expires inactive players
+ok 47 - hosted presence persists across D1 clients and expires inactive players
+  ---
+  duration_ms: 2.144375
+  ...
+# Subtest: shared replay controls preserve position through pause, speed, seek and resume
+ok 48 - shared replay controls preserve position through pause, speed, seek and resume
+  ---
+  duration_ms: 1.177792
+  ...
+# Subtest: replay API controls synchronize spectators without changing live kitchen evidence
+ok 49 - replay API controls synchronize spectators without changing live kitchen evidence
+  ---
+  duration_ms: 53.910208
+  ...
+# Subtest: courier poses travel forward and use atan2 heading for every district turn
+ok 50 - courier poses travel forward and use atan2 heading for every district turn
+  ---
+  duration_ms: 1.398792
+  ...
+# (node:80375) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: hosted storage seeds once, persists across clients, and rejects stale writes
+ok 51 - hosted storage seeds once, persists across clients, and rejects stale writes
+  ---
+  duration_ms: 8.619834
+  ...
+# Subtest: vision adapter sends an image with schema and validates the response
+ok 52 - vision adapter sends an image with schema and validates the response
+  ---
+  duration_ms: 12.676875
+  ...
+# Subtest: invalid or failed vision responses never become green evidence
+ok 53 - invalid or failed vision responses never become green evidence
+  ---
+  duration_ms: 0.482416
+  ...
+1..53
+# tests 58
+# suites 0
+# pass 58
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 265.255333
+npm notice
+npm notice New major version of npm available! 10.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

@@ -8,6 +8,7 @@ import {
 } from "../shared/courier-route.mjs";
 import { MapPin, Panel } from "./UI.jsx";
 import "./delivery.css";
+import PhotoDemo from "./PhotoDemo.jsx";
 const STEPS = ["Packed", "Out for delivery", "Arriving", "Delivered"];
 function CourierMarker({ pose, delivered, moving }) {
   return (
@@ -134,7 +135,7 @@ export function DistrictMap({ order, trip }) {
       className="district-map"
       viewBox="0 0 1120 600"
       role="img"
-      aria-label={`Live simulated delivery map from Nova Kitchen to ${order?.delivery?.name || "the neighborhood"}`}
+      aria-label={`Live simulated delivery map from Zindabad Dash to ${order?.delivery?.name || "the neighborhood"}`}
     >
       <defs>
         <pattern
@@ -188,13 +189,13 @@ export function DistrictMap({ order, trip }) {
       </g>
       <g fontSize="9" letterSpacing="3" fill="#aac6bb" opacity=".75">
         <text x="450" y="356">
-          SUNSET BLVD
+          MARKET STREET
         </text>
         <text x="410" y="470">
-          PALM AVENUE
+          PARK AVENUE
         </text>
         <text x="415" y="208">
-          NOVA DRIVE
+          SERVICE DRIVE
         </text>
         <text x="90" y="100">
           SERVICE
@@ -296,7 +297,7 @@ export function DistrictMap({ order, trip }) {
           textAnchor="middle"
           letterSpacing="2"
         >
-          NOVA KITCHEN
+          ZINDABAD DASH
         </text>
         <path d="M0 0v25" stroke="#ff7dad" strokeWidth="2" />
       </g>
@@ -340,10 +341,16 @@ export function DistrictMap({ order, trip }) {
         fontSize="8"
         letterSpacing="2"
       >
-        NOVA DISTRICT / SIMULATED
+        ZINDABAD DISTRICT / SIMULATED
       </text>
     </svg>
   );
+}
+function DoorstepPhoto({order,act,busy}) {
+ const [image,setImage]=useState(''),[error,setError]=useState('');
+ async function upload(file){if(!file)return;try{if(file.size>12000000)throw Error('Choose a photo under 12 MB.');const b=await createImageBitmap(file),c=document.createElement('canvas'),scale=Math.min(1,1280/Math.max(b.width,b.height));c.width=b.width*scale;c.height=b.height*scale;c.getContext('2d').drawImage(b,0,0,c.width,c.height);b.close();setImage(c.toDataURL('image/jpeg',.85));setError('');}catch(e){setError(e.message);}}
+ const check=order.deliveryVerification;
+ return <section className="doorstep-photo"><h3>Check the delivery photo</h3><PhotoDemo {...{order,act,busy}} doorstep/><p>Open the bag and show every item. Upload a JPEG, PNG or WebP photo. The AI counts visible items against this ticket; a mismatch or unclear photo keeps receipt unconfirmed.</p><label className="upload">Upload delivery photo<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>upload(e.target.files[0])}/></label>{image&&<><img className="capture" style={{maxHeight:220,width:'auto',display:'block',margin:'12px 0'}} src={image} alt="Delivery items selected for AI verification"/><button disabled={!!busy} onClick={()=>act('/orders/'+order.id+'/delivery-verify',{mode:'vision',image},'Checking the delivered items with OpenRouter…')}>Analyze delivery photo</button></>}{error&&<p role="alert">{error}</p>}{check&&<div className={'verification '+check.status} role="status"><h3>{check.status==='green'?'Delivered items match':check.status==='red'?'Delivery mismatch — recheck items':'Unclear evidence — take another photo'}</h3>{check.rows.map(r=><p key={r.sku}>{r.name}: {r.observed} of {r.expected} visible</p>)}{check.observation.notes.map((n,i)=><small className="block" key={i}>{n}</small>)}</div>}<p className="hint">One still image is sent to OpenRouter. Images are not saved by this app. Visible contents only; hidden ingredients cannot be confirmed.</p></section>;
 }
 export function DeliveryJourney({
   order,
@@ -362,7 +369,7 @@ export function DeliveryJourney({
     trip = deliveryProgress(order, now);
   const labels = {
     waiting: "The kitchen has your ticket.",
-    to_restaurant: "Courier approaching Nova.",
+    to_restaurant: "Courier approaching the restaurant.",
     at_restaurant: "Ready for verified handoff.",
     on_way: "On the way to the customer.",
     at_home: "At your door.",
@@ -414,7 +421,7 @@ export function DeliveryJourney({
       <div className="district-map-wrap">
         <DistrictMap {...{ order, trip }} />
         <div className="district-map-key">
-          <span>● NOVA</span>
+          <span>● RESTAURANT</span>
           <span>● COURIER</span>
           <span>● DESTINATION</span>
         </div>
@@ -460,19 +467,21 @@ export function DeliveryJourney({
             Match {order.pickupCode} & dispatch courier ↗
           </button>
         ) : !readOnly && trip.stage === "at_home" ? (
+          <>
+          <DoorstepPhoto {...{order,act,busy}}/>
           <button
             className="primary"
-            disabled={!!busy}
+            disabled={!!busy || order.deliveryVerification?.status !== "green"}
             onClick={() => act("/orders/" + order.id + "/deliver")}
           >
             Confirm delivery received ✓
-          </button>
+          </button></>
         ) : (
           <p>
             {trip.stage === "waiting"
               ? "Complete cooking, packing verification and bag confirmation before dispatch."
               : trip.stage === "to_restaurant"
-                ? "The courier must reach Nova before reference matching."
+                ? "The courier must reach the restaurant before reference matching."
                 : trip.stage === "on_way"
                   ? "The courier is heading to your house. Receipt unlocks on arrival."
                   : trip.stage === "delivered"

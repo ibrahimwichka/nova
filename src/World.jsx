@@ -14,8 +14,6 @@ const ROLES = [
   ["customer", "Customer"],
   ["kitchen", "Kitchen"],
   ["owner", "Owner"],
-  ["display", "Live display"],
-  ["split", "Linked views"],
 ];
 const CATEGORIES = {
   owner: [
@@ -282,12 +280,12 @@ export default function World({
           Skip to content
         </a>
         <header className="platform-header">
-          <a className="platform-brand" href="/?view=customer">
+          <a className="platform-brand" href="/?view=customer&intro=1">
             <span className="nova-mark">
-              n<span>·</span>
+              z<span>·</span>
             </span>
             <div>
-              <b>nova</b>
+              <b>Zindabad Dash</b>
               <small>Restaurant intelligence</small>
             </div>
           </a>
@@ -312,7 +310,7 @@ export default function World({
         </header>
         <div className="platform-subnav">
           <nav aria-label="Workspace sections">
-            {WORLD_TABS.map(([id, label]) => (
+            {WORLD_TABS.filter(([id])=>view!=='customer'||['floor','delivery'].includes(id)).map(([id, label]) => (
               <button
                 key={id}
                 id={"section-" + id}
@@ -520,7 +518,7 @@ export default function World({
             </div>
           </section>
           <footer className="platform-footer">
-            <span>Nova Kitchen Lab</span>
+            <span>Zindabad Dash</span>
             <span>
               Interactive restaurant demonstration · shared across your devices
             </span>

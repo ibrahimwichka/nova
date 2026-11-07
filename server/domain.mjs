@@ -142,12 +142,22 @@ export function collectOrder(state, orderId, code) {
 export function makeDelivery(homeId) {
   const home = HOMES.find(h => h.id === homeId);
   if (!home) fail('Choose one of the demo delivery homes.');
-  return { ...home, courier: 'Nova courier', simulated: true };
+  return { ...home, courier: 'Zindabad courier', simulated: true };
+}
+export function recordDeliveryVerification(state, orderId, observation) {
+  const order = state.orders.find(o => o.id === orderId);
+  if (!order?.delivery || order.status !== 'out_for_delivery' || deliveryProgress(order).stage !== 'at_home') fail('Photograph the items once the courier reaches the house.', 409);
+  const check = { ...comparePacking(order, observation), id: randomUUID(), mode: 'vision', revision: order.revision, at: new Date().toISOString() };
+  order.deliveryVerification = check;
+  event(state, `${order.id}: doorstep photo check ${check.status}.`, check.status === 'green' ? 'success' : 'warning');
+  return check;
 }
 export function confirmDelivery(state, orderId) {
   const order = state.orders.find(o => o.id === orderId);
   if (!order?.delivery || order.status !== 'out_for_delivery') fail('This order is not out for delivery.', 409);
   if (deliveryProgress(order).stage !== 'at_home') fail('The courier has not reached the house yet.', 409);
+  const check = order.deliveryVerification;
+  if (!check || check.status !== 'green' || check.revision !== order.revision || Date.now() - Date.parse(check.at) > 300_000) fail('Upload a fresh matching doorstep photo before confirming delivery. Missing or uncertain items need a recheck.', 409);
   order.status = 'delivered'; order.revision++;
   order.delivery.confirmedAt = Date.now();
   event(state, order.id + ': delivery confirmed at ' + order.delivery.name + '.', 'success');

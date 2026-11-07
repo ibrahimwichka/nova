@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { initialState, CATALOG, fail } from '../server/domain.mjs';
+import { initialState, CATALOG, fail, recordDeliveryVerification, demoObservation } from '../server/domain.mjs';
 import { createApi } from '../server/api.mjs';
 import { memoryPresenceStore, validatePresence, d1PresenceStore } from '../server/presence.mjs';
 import { availableInventory, itemLimit } from '../shared/stock.mjs';
@@ -83,6 +83,12 @@ test('delivery requires a verified bag, courier arrival, travel to the house, an
   assert.equal((await call(a,'/orders/'+id+'/deliver',{})).status,409);
   travelling.delivery.departedAt=Date.now()-20000;travelling.delivery.arrivesAt=Date.now()-1;
   assert.equal(deliveryProgress(travelling).stage,'at_home');
+  assert.equal((await call(a,'/orders/'+id+'/deliver',{})).status,409,'receipt requires photo evidence');
+  recordDeliveryVerification(get(),id,demoObservation(get().orders[0],'missing'));
+  assert.equal((await call(a,'/orders/'+id+'/deliver',{})).status,409,'missing items block receipt');
+  recordDeliveryVerification(get(),id,demoObservation(get().orders[0],'obscured'));
+  assert.equal((await call(a,'/orders/'+id+'/deliver',{})).status,409,'unclear photo blocks receipt');
+  recordDeliveryVerification(get(),id,demoObservation(get().orders[0],'complete'));
   assert.equal((await call(a,'/orders/'+id+'/deliver',{})).status,200);
   assert.equal((await call(b,'/state')).body.state.orders[0].status,'delivered');
   assert.equal((await call(a,'/orders/'+id+'/deliver',{})).status,409);

@@ -18,7 +18,7 @@ export default function AppHeader({ roles, view, onViewChange, connected, versio
           <div className="brand">
             <span className="brand-mark" aria-hidden="true">N</span>
             <div>
-              <b>Nova Kitchen Lab</b>
+              <b>Zindabad Dash</b>
               <small>Live restaurant simulator</small>
             </div>
           </div>

@@ -1,4 +1,4 @@
-# Nova Kitchen Lab
+# Zindabad Dash
 
 A connected restaurant demonstration for exploring customer arrival, preparation, packing verification, delivery and operational recovery. Two Macs are enough; no new hardware is required.
 

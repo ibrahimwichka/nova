@@ -1,4 +1,4 @@
-import { CATALOG, INGREDIENTS, clone, initialState, snapshot, fail, event, validateChanges, disrupt, demoObservation, recordVerification, readyOrder, collectOrder, prepareOrder, finishPreparation, completeGameStation, makeDelivery, confirmDelivery } from './domain.mjs';
+import { CATALOG, INGREDIENTS, clone, initialState, snapshot, fail, event, validateChanges, disrupt, demoObservation, recordVerification, readyOrder, collectOrder, prepareOrder, finishPreparation, completeGameStation, makeDelivery, confirmDelivery, recordDeliveryVerification } from './domain.mjs';
 import { availableInventory, stockIssue } from '../shared/stock.mjs';
 import { controlPlayback } from '../shared/replay.mjs';
 import { HOMES } from '../shared/delivery.mjs';
@@ -139,7 +139,7 @@ async function api(req, res, pathname) {
     await update(next => { next.orders.push({ id, customer: name, source: 'Customer · sample', due: 18, arrival: 0, createdAt: new Date().toISOString(), status: 'queued', revision: 1, items, fulfillment: delivery ? 'delivery' : 'pickup', ...(delivery ? { delivery } : {}), note: 'Placed from the customer view.' }); next.appliedPlan = null; event(next, `${id}: ${name} placed an order.`, 'success'); });
     return json(res, 201, { ...payload(), orderId: id });
   }
-  const orderRoute = pathname.match(/^\/api\/orders\/([^/]+)\/(prepare|finish|game-cook|verify|ready|collect|deliver|edit|cancel|recheck)$/);
+  const orderRoute = pathname.match(/^\/api\/orders\/([^/]+)\/(prepare|finish|game-cook|verify|delivery-verify|ready|collect|deliver|edit|cancel|recheck)$/);
   if (orderRoute) {
     const [, id, action] = orderRoute;
     const order = getOrder(id);
@@ -152,8 +152,10 @@ async function api(req, res, pathname) {
         if (shortage) fail(INGREDIENTS[shortage.id] + ': only ' + shortage.available + ' available for this edit.', 409);
         await update(next => { const o = next.orders.find(o => o.id === id); o.items = items; o.revision++; next.appliedPlan = null; event(next, id + ': customer updated the items.'); });
       }
-    } else if (action === 'verify') {
-      if (order.status !== 'packing') fail('Move this order to packing first.', 409);
+    } else if (action === 'verify' || action === 'delivery-verify') {
+      const doorstep = action === 'delivery-verify';
+      if (doorstep && (order.status !== 'out_for_delivery' || input.mode !== 'vision')) fail('A doorstep check requires an out-for-delivery order and an uploaded photo.', 409);
+      if (!doorstep && order.status !== 'packing') fail('Move this order to packing first.', 409);
       const revision = order.revision;
       let observation;
       if (input.mode === 'vision') {
@@ -165,7 +167,7 @@ async function api(req, res, pathname) {
       } else if (input.mode === 'demo') observation = demoObservation(order, input.fixture);
       else if (input.mode === 'manual' || input.mode === 'game') observation = input.observation;
       else fail('Choose camera, manual, game, or demo verification.');
-      await update(next => { const current = next.orders.find(o => o.id === id); if (current.revision !== revision) fail('The order changed during analysis. Take a new frame.', 409); recordVerification(next, id, observation, input.mode); });
+      await update(next => { const current = next.orders.find(o => o.id === id); if (current.revision !== revision) fail('The order changed during analysis. Take a new frame.', 409); if (doorstep) recordDeliveryVerification(next, id, observation); else recordVerification(next, id, observation, input.mode); });
     } else if (action === 'prepare') await update(next => { prepareOrder(next, id); next.appliedPlan = null; });
     else if (action === 'finish') await update(next => { finishPreparation(next, id); next.appliedPlan = null; });
     else if (action === 'game-cook') await update(next => { completeGameStation(next, id, input.station); next.appliedPlan = null; });
