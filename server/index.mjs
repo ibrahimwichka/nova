@@ -38,7 +38,7 @@ const server = http.createServer(async (req, res) => {
     const root = path.join(ROOT, 'dist'); let filename = path.resolve(root, `.${decodeURIComponent(pathname)}`);
     if (!filename.startsWith(`${root}${path.sep}`) && filename !== root) fail('Not found.', 404);
     if (!path.extname(filename)) filename = path.join(root, 'index.html');
-    const types = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png' };
+    const types = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.ttf': 'font/ttf', '.woff2': 'font/woff2', '.txt': 'text/plain; charset=utf-8' };
     const content = await readFile(filename); res.writeHead(200, { 'Content-Type': types[path.extname(filename)] || 'application/octet-stream', 'X-Content-Type-Options': 'nosniff' }); res.end(content);
   } catch (error) { if (res.headersSent) return res.end(); res.writeHead(error.status || (error.code === 'ENOENT' ? 404 : 500), { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: error.status ? error.message : 'The server could not complete this request.' })); }
 });

@@ -1,0 +1,2510 @@
+@font-face {
+  font-family: Nova Sans;
+  src: url("/fonts/space-grotesk.ttf") format("truetype");
+  font-display: swap;
+  font-weight: 300 700;
+}
+.nova-professional {
+  --ink: #203d34;
+  --muted: #66776f;
+  --accent: #285b47;
+  --paper: #fff;
+  --line: #dce3da;
+  position: fixed;
+  inset: 0;
+  background: #f3f5f0;
+  color: var(--ink);
+  font:
+    14px/1.5 "Nova Sans",
+    -apple-system,
+    sans-serif;
+  overflow: hidden;
+  isolation: isolate;
+  color-scheme: light;
+}
+.nova-professional * {
+  box-sizing: border-box;
+}
+.nova-professional [hidden] {
+  display: none !important;
+}
+.nova-professional button,
+.nova-professional input,
+.nova-professional textarea,
+.nova-professional select {
+  font-family: inherit;
+}
+.nova-professional button {
+  border: 1px solid #d2dcd0;
+  background: #fff;
+  color: #2c4d3d;
+  border-radius: 7px;
+  min-height: 38px;
+  padding: 9px 13px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    transform 0.15s;
+}
+.nova-professional button:hover:not(:disabled) {
+  background: #edf3e9;
+  border-color: #a8bba3;
+}
+.nova-professional button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.nova-professional button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.nova-professional button[aria-pressed="true"] {
+  background: #e6eee0;
+  border-color: #829e76;
+  color: #234b36;
+}
+.nova-professional button.primary,
+.nova-professional button.game-primary {
+  background: #285b47;
+  color: #fff;
+  border-color: #285b47;
+  box-shadow: none;
+}
+.nova-professional button.primary:hover:not(:disabled),
+.nova-professional button.game-primary:hover:not(:disabled) {
+  background: #1c4534;
+}
+.nova-professional button:focus-visible,
+.nova-professional a:focus-visible,
+.nova-professional input:focus-visible,
+.nova-professional textarea:focus-visible,
+.nova-professional select:focus-visible,
+.nova-professional summary:focus-visible {
+  outline: 3px solid #a97636;
+  outline-offset: 3px;
+}
+.nova-professional input,
+.nova-professional textarea,
+.nova-professional select {
+  background: #fff;
+  color: #254334;
+  border: 1px solid #cbd7c8;
+  border-radius: 6px;
+  padding: 10px;
+  min-width: 0;
+}
+.nova-professional label {
+  color: #536b5a;
+}
+.nova-professional p {
+  color: #66776c;
+  line-height: 1.7;
+}
+.nova-professional small {
+  color: #596e51;
+}
+.nova-professional a {
+  color: #285f46;
+  text-underline-offset: 3px;
+}
+.nova-professional h1,
+.nova-professional h2,
+.nova-professional h3 {
+  color: #244032;
+}
+.nova-professional h1 {
+  font-weight: 500;
+  letter-spacing: -1.2px;
+}
+.nova-professional h2 {
+  font-weight: 600;
+}
+.nova-professional kbd {
+  font:
+    10px ui-monospace,
+    monospace;
+  color: #49634d;
+  border: 1px solid #c6d2be;
+  background: #fafbf6;
+  border-radius: 3px;
+  padding: 3px 5px;
+}
+.skip-content {
+  position: absolute;
+  left: 20px;
+  top: -100px;
+  z-index: 100;
+  padding: 12px;
+  background: #fff;
+}
+.skip-content:focus {
+  top: 10px;
+}
+.eyebrow {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  font-weight: 650;
+  color: #596e51;
+  text-transform: uppercase;
+}
+.platform-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  height: 92px;
+  padding: 0 32px;
+  background: #fff;
+  border: 0;
+  border-bottom: 1px solid #dfe6d9;
+  color: #254734;
+}
+.platform-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.nova-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 43px;
+  height: 46px;
+  border-radius: 11px 11px 11px 2px;
+  background: #27563f;
+  color: #f8f8e9;
+  font-size: 36px;
+  font-weight: 500;
+  letter-spacing: -4px;
+  padding-right: 6px;
+  line-height: 1;
+}
+.nova-mark > span {
+  color: #596e51;
+  font-size: 30px;
+}
+.platform-brand b {
+  font-size: 27px;
+  letter-spacing: -1.8px;
+  line-height: 1.1;
+  font-weight: 600;
+}
+.platform-brand small {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  margin-top: 3px;
+  color: #596e51;
+}
+.perspective-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px;
+  border-radius: 9px;
+  background: #f3f6ef;
+  border: 1px solid #e2e8dc;
+}
+.nova-professional .perspective-nav button {
+  background: transparent;
+  border-color: transparent;
+  font-size: 12px;
+  padding: 8px 14px;
+  min-height: 35px;
+  font-weight: 500;
+}
+.nova-professional .perspective-nav button[aria-current="page"] {
+  background: #fff;
+  color: #234e36;
+  border-color: #dce4d5;
+  box-shadow: 0 2px 5px #254f3210;
+  font-weight: 650;
+}
+.platform-connection {
+  text-align: right;
+  flex-shrink: 0;
+}
+.platform-connection > span {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.platform-connection i,
+.subtle-live i,
+.subtle-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #699d63;
+  box-shadow: 0 0 0 3px #73a55e15;
+}
+.platform-connection small {
+  font-size: 9px;
+  display: block;
+  margin-top: 4px;
+  color: #596e51;
+}
+.platform-connection .is-disconnected {
+  color: #a85839;
+}
+.is-disconnected i {
+  background: #b16d45;
+}
+.platform-subnav {
+  height: 58px;
+  background: #fff;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 0 32px;
+  border-bottom: 1px solid #dde4d7;
+}
+.platform-subnav > nav {
+  display: flex;
+  align-items: stretch;
+  gap: 23px;
+  padding: 0;
+  background: none;
+  border: 0;
+}
+.nova-professional .platform-subnav > nav button {
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+  font-size: 11px;
+  color: #596e51;
+  position: relative;
+  padding: 0 2px;
+  min-height: unset;
+}
+.platform-subnav > nav button[aria-current="page"] {
+  color: #2b563a;
+  font-weight: 700;
+}
+.platform-subnav > nav button[aria-current="page"]:after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  height: 3px;
+  background: #285b47;
+  border-radius: 2px 2px 0 0;
+  left: 0;
+  right: 0;
+}
+.platform-subnav > nav button > span {
+  font-size: 8px;
+  padding: 2px 5px;
+  background: #f6ead5;
+  color: #8d672b;
+  border-radius: 4px;
+  margin-left: 7px;
+}
+.platform-subnav > div {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 10px;
+  color: #596e51;
+}
+.nova-professional .platform-subnav > div button {
+  border: 0;
+  background: transparent;
+  font-size: 10px;
+  min-height: 28px;
+  padding: 5px 0;
+}
+.platform-subnav > div button > span {
+  margin-left: 7px;
+  color: #596e51;
+}
+.platform-main {
+  position: absolute;
+  inset: 150px 0 0;
+  overflow: auto;
+  max-width: none;
+  margin: 0;
+  padding: 30px 32px 22px;
+  outline: none;
+  scrollbar-width: thin;
+  scrollbar-color: #bdcbb3 #f3f5f0;
+}
+.platform-main:focus {
+  outline: none;
+}
+.platform-screen {
+  max-width: 1536px;
+  margin: auto;
+}
+.page-heading,
+.experience-heading {
+  margin-bottom: 24px;
+}
+.page-heading h1,
+.experience-heading h1 {
+  font-size: 32px;
+  line-height: 1.2;
+  margin: 7px 0 8px;
+}
+.page-heading p,
+.experience-heading p {
+  font-size: 12px;
+  margin: 0;
+  color: #596e51;
+}
+.experience-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+.perspective-toggle {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: #e9eee3;
+  border: 1px solid #dce4d4;
+  border-radius: 8px;
+  align-self: center;
+}
+.nova-professional .perspective-toggle button {
+  border-color: transparent;
+  background: transparent;
+  min-height: 31px;
+  padding: 7px 12px;
+  font-size: 10px;
+}
+.nova-professional .perspective-toggle button[aria-pressed="true"] {
+  background: #fff;
+  border-color: #d6e0ce;
+  box-shadow: 0 2px 5px #4565360a;
+}
+.subtle-live {
+  font-size: 10px;
+  color: #596e51;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.surface-panel {
+  background: #fff;
+  border: 1px solid #dce4d5;
+  border-radius: 10px;
+  padding: 22px;
+  box-shadow: 0 3px 10px #39503103;
+}
+.journey-steps {
+  list-style: none;
+  display: flex;
+  gap: 0;
+  padding: 0;
+  margin: 0 0 24px;
+  border: 1px solid #dae3d1;
+  background: #edf2e7;
+  border-radius: 9px;
+  overflow: hidden;
+}
+.journey-steps li {
+  flex: 1;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 13px 18px;
+  color: #596e51;
+  font-size: 10px;
+  border-right: 1px solid #dce4d5;
+  line-height: 1.4;
+}
+.journey-steps li:last-child {
+  border-right: 0;
+}
+.journey-steps li > span {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border: 1px solid #c4d0ba;
+  border-radius: 50%;
+  font-size: 10px;
+  background: #f4f7ef;
+}
+.journey-steps .current {
+  background: #fff;
+  color: #365c3b;
+  font-weight: 600;
+}
+.journey-steps .current > span {
+  background: #315d42;
+  color: #fff;
+  border-color: #315d42;
+}
+.journey-steps .complete {
+  color: #4c7849;
+}
+.journey-steps .complete > span {
+  background: #e0ead7;
+  border-color: #b0c79e;
+}
+.service-floor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 24px;
+  align-items: start;
+}
+.service-visual-column {
+  min-width: 0;
+}
+.service-scene {
+  background: #e7e9db;
+  border: 1px solid #d1dbca;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+.first-person-scene {
+  height: clamp(370px, 52dvh, 620px);
+  position: relative;
+  background: #e0e6da;
+  overflow: hidden;
+}
+.first-person-scene canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: grab;
+  outline: none;
+}
+.first-person-scene canvas:active {
+  cursor: grabbing;
+}
+.scene-location {
+  position: absolute;
+  left: 18px;
+  top: 18px;
+  padding: 7px 11px;
+  background: #fffffff0;
+  border: 1px solid #d3decc;
+  border-radius: 6px;
+  font-size: 9px;
+  color: #486042;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  pointer-events: none;
+  box-shadow: 0 2px 8px #29452407;
+}
+.scene-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #72996b;
+}
+.scene-instructions {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  white-space: nowrap;
+  background: #f9fbf4eb;
+  border: 1px solid #d5dfcc;
+  padding: 9px 13px;
+  border-radius: 6px;
+  color: #62775b;
+  font-size: 9px;
+  pointer-events: none;
+}
+.scene-instructions kbd {
+  font-size: 8px;
+  margin-right: 4px;
+}
+.scene-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  background: #e9eee2;
+  color: #486740;
+  z-index: 3;
+  padding: 30px;
+  text-align: center;
+}
+.scene-loading b {
+  font-size: 15px;
+  font-weight: 500;
+}
+.scene-loading small {
+  font-size: 11px;
+}
+.scene-loading p {
+  font-size: 12px;
+  max-width: 330px;
+}
+.scene-loader {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  border: 2px solid #bdcdb0;
+  border-top-color: #4d7546;
+  animation: scene-spin 1s linear infinite;
+}
+.experience-context {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-top: 16px;
+  padding: 18px 20px;
+  background: #fff;
+  border: 1px solid #dae3d1;
+  border-radius: 9px;
+}
+.experience-context b {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #36563b;
+  margin: 3px 0;
+}
+.experience-context p {
+  font-size: 10px;
+  margin: 0;
+  max-width: 500px;
+}
+.experience-context > button {
+  flex-shrink: 0;
+  font-size: 11px;
+  min-width: 168px;
+}
+.experience-context > button > span {
+  margin-left: 12px;
+}
+.perspective-handoff {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 16px 0 0;
+  padding: 0 3px;
+}
+.perspective-handoff > span {
+  font-size: 10px;
+  color: #596e51;
+  margin-right: auto;
+}
+.nova-professional .perspective-handoff button {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  min-height: 28px;
+  font-size: 10px;
+  color: #4e7650;
+}
+.perspective-handoff button > span {
+  margin-left: 5px;
+}
+.arrival-card {
+  padding: 25px;
+}
+.arrival-card h2 {
+  font-size: 24px;
+  line-height: 1.4;
+  letter-spacing: -0.6px;
+  margin: 12px 0;
+  font-weight: 500;
+}
+.arrival-card > p {
+  font-size: 12px;
+  margin-bottom: 25px;
+}
+.arrival-card > small {
+  font-size: 9px;
+  display: block;
+  padding-top: 20px;
+  border-top: 1px solid #e2e9dc;
+  margin-top: 22px;
+}
+.arrival-detail {
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+  margin: 22px 0;
+}
+.arrival-detail > span {
+  font:
+    11px ui-monospace,
+    monospace;
+  color: #596e51;
+  background: #eff4e9;
+  border: 1px solid #dce6d1;
+  border-radius: 5px;
+  padding: 7px;
+}
+.arrival-detail b {
+  font-size: 12px;
+  font-weight: 600;
+}
+.arrival-detail p {
+  font-size: 10px;
+  margin: 3px 0 0;
+}
+.service-task-column {
+  min-width: 0;
+}
+.nova-professional .service-task-column .mission-panel {
+  background: #fff;
+  border: 1px solid #d9e3cf;
+  border-radius: 10px;
+  padding: 23px;
+  box-shadow: none;
+  --paper: #fff;
+  --ink: #31543a;
+}
+.nova-professional .mission-panel .mission-eyebrow {
+  font-size: 9px;
+  color: #596e51;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+}
+.nova-professional .mission-panel h2 {
+  font-size: 23px;
+  letter-spacing: -0.6px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+.nova-professional .mission-panel p {
+  color: #596e51;
+  font-size: 12px;
+}
+.nova-professional .mission-panel .game-primary {
+  font-size: 12px;
+  padding: 12px;
+}
+.nova-professional .mission-panel .walk-button {
+  background: #f8faf4;
+  border-color: #d6e2ca;
+  color: #596e51;
+  font-size: 10px;
+}
+.nova-professional .game-steps {
+  margin: 18px 0;
+}
+.nova-professional .game-steps li {
+  font-size: 8px;
+}
+.nova-professional .game-menu label {
+  font-size: 10px;
+  color: #596e51;
+}
+.nova-professional .game-menu input,
+.nova-professional .game-menu select {
+  background: #fbfcf8;
+  color: #365337;
+  border-color: #d9e2cf;
+  font-size: 12px;
+}
+.nova-professional .game-menu-item {
+  padding: 13px 0;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.nova-professional .game-menu-item .food-art {
+  font-size: 27px;
+}
+.nova-professional .game-menu-item b {
+  font-size: 12px;
+}
+.nova-professional .game-menu-item small {
+  font-size: 9px;
+  color: #596e51;
+}
+.nova-professional .game-menu-item > .quantity-editor {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-basis: 100%;
+  justify-content: flex-end;
+}
+.nova-professional .quantity-editor input {
+  width: 56px;
+  padding: 6px;
+  text-align: center;
+}
+.nova-professional .quantity-editor button {
+  padding: 4px 8px;
+  min-width: 29px;
+  min-height: 31px;
+  font-size: 14px;
+}
+.nova-professional .quantity-editor .remove-line {
+  font-size: 12px;
+  background: #fafbf7;
+  color: #596e51;
+}
+.nova-professional .game-menu .row button {
+  font-size: 9px;
+}
+.nova-professional .game-menu > small,
+.nova-professional .pack-game > small {
+  font-size: 9px;
+  display: block;
+  line-height: 1.6;
+  color: #596e51;
+}
+.nova-professional .game-receipt > div {
+  font-size: 11px;
+}
+.nova-professional .game-receipt b {
+  font-size: 10px;
+}
+.nova-professional .food-shelf button > span {
+  font-size: 26px;
+}
+.nova-professional .food-shelf button > small {
+  font-size: 8px;
+}
+.nova-professional .bag-count-row {
+  flex-wrap: wrap;
+}
+.nova-professional .bag-count-row > .quantity-editor {
+  flex-basis: 100%;
+  justify-content: flex-end;
+}
+.nova-professional .completion-stamp {
+  font-size: 25px;
+  background: #eef5e8;
+  color: #596e51;
+  padding: 18px;
+}
+.nova-professional .completion-stamp span {
+  font-size: 11px;
+}
+.service-scene .room-wrap {
+  border: 0;
+  border-radius: 0;
+  background: #edf1e5;
+  box-shadow: none;
+}
+.service-scene .room-topline {
+  background: #2f5242;
+  color: #f5f4e9;
+  padding: 10px 14px;
+  font-size: 8px;
+}
+.service-scene .room-context > b {
+  font-size: 11px;
+}
+.service-scene .room-mode {
+  font-size: 7px;
+  background: #274a3d;
+  border-color: #99b28a55;
+}
+.service-scene .room-hud {
+  font-size: 8px;
+}
+.service-scene .restaurant-room {
+  padding: 9px;
+  background: #344f43;
+}
+.service-scene .room-bottomline,
+.service-scene .direction-hint {
+  display: none;
+}
+.floor-caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 15px;
+  background: #f8faf3;
+  font-size: 8px;
+  color: #596e51;
+}
+.floor-caption > span:first-child {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+.floor-caption .subtle-dot {
+  width: 5px;
+  height: 5px;
+}
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin: 23px 0 13px;
+}
+.section-heading h2 {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+}
+.section-heading h2 > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  background: #e3ecd9;
+  font-size: 10px;
+  border-radius: 5px;
+  margin-left: 7px;
+}
+.section-heading small {
+  font-size: 9px;
+}
+.service-ticket-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.nova-professional .service-order-card {
+  text-align: left;
+  padding: 14px;
+  background: #fff;
+  border-color: #dae2d2;
+  min-width: 0;
+}
+.nova-professional .service-order-card.is-selected {
+  background: #f1f6e9;
+  border-color: #96b17f;
+  box-shadow: inset 0 0 0 1px #96b17f;
+}
+.service-order-card > span:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+.service-order-card > span:first-child b {
+  font:
+    9px ui-monospace,
+    monospace;
+  color: #57794a;
+}
+.service-order-card > span:first-child small {
+  font-size: 7px;
+  text-transform: capitalize;
+}
+.service-order-card > strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 9px 0 5px;
+  overflow-wrap: anywhere;
+}
+.service-order-card .order-card-items {
+  font-size: 9px;
+  color: #596e51;
+  display: block;
+  line-height: 1.6;
+}
+.service-order-card em {
+  display: block;
+  font-size: 8px;
+  color: #9b6540;
+  font-style: normal;
+  margin-top: 8px;
+}
+.nova-professional .service-order-card.needs-attention {
+  border-left: 3px solid #b98c45;
+}
+.quiet-empty p {
+  font-size: 11px;
+  margin: 7px 0 15px;
+}
+.quiet-empty b {
+  font-size: 13px;
+}
+.quiet-empty button {
+  font-size: 10px;
+}
+.service-summary h2 {
+  font-size: 22px;
+  font-weight: 500;
+  margin: 12px 0 24px;
+  letter-spacing: -0.6px;
+}
+.summary-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 19px 25px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e3e9db;
+}
+.summary-stats b {
+  display: block;
+  font-size: 29px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: #426340;
+}
+.summary-stats small {
+  font-size: 9px;
+  display: block;
+  margin-top: 5px;
+  color: #596e51;
+}
+.service-summary h3 {
+  font-size: 12px;
+  margin: 23px 0 12px;
+}
+.service-activity p {
+  padding: 0 0 12px 12px;
+  border-left: 2px solid #d9e4cd;
+  font-size: 10px;
+  color: #596e51;
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+.helper-text {
+  font-size: 9px !important;
+  padding-top: 16px;
+  border-top: 1px solid #e3e9db;
+  margin: 18px 0 0;
+}
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.nova-professional .inventory-card {
+  text-align: left;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #dbe3d2;
+  border-radius: 10px;
+}
+.inventory-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.inventory-card-top > small {
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  color: #596e51;
+}
+.inventory-card-top em {
+  font-size: 8px;
+  color: #567b4d;
+  font-style: normal;
+  padding: 4px 6px;
+  background: #f0f5e9;
+  border-radius: 4px;
+}
+.inventory-card-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0;
+}
+.inventory-card-main > b {
+  font-size: 17px;
+  font-weight: 500;
+}
+.inventory-card-main > strong {
+  font-size: 33px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: right;
+  color: #416c3d;
+}
+.inventory-card-main > strong small {
+  display: block;
+  font-size: 8px;
+  font-weight: 400;
+  color: #596e51;
+}
+.stock-progress > span {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 9px;
+  color: #596e51;
+}
+.stock-progress > span b {
+  font-weight: 400;
+}
+.stock-progress > span small {
+  font-size: 8px;
+}
+.stock-progress > div {
+  height: 4px;
+  background: #edf2e6;
+  margin-top: 9px;
+  overflow: hidden;
+  border-radius: 4px;
+}
+.stock-progress i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #8fad78;
+  transform-origin: left;
+  transition: transform 0.3s;
+}
+.nova-professional .inventory-card.stock-warning {
+  border-color: #dec7a0;
+}
+.stock-warning .inventory-card-top em {
+  background: #fbf1e0;
+  color: #9a6c31;
+}
+.stock-warning .stock-progress i {
+  background: #c69c58;
+}
+.inventory-selection {
+  margin-bottom: 24px;
+}
+.inventory-selection p {
+  font-size: 11px;
+  margin-bottom: 0;
+}
+.ai-brief {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  box-shadow: none;
+  background: linear-gradient(110deg, #edf3e5, #f9fbf6);
+  border-color: #d5e2c7;
+}
+.ai-symbol {
+  display: grid;
+  place-items: center;
+  flex: 0 0 36px;
+  height: 36px;
+  background: #e1ebd6;
+  color: #596e51;
+  font-size: 25px;
+  border: 1px solid #cedec0;
+  border-radius: 8px;
+}
+.ai-brief p {
+  font-size: 12px;
+  margin: 7px 0 0;
+  color: #596e51;
+}
+.ai-brief small {
+  font-size: 9px;
+  display: block;
+  margin-top: 7px;
+}
+.advisory-chip {
+  margin-left: auto;
+  background: #fff;
+  border: 1px solid #d8e4cd;
+  padding: 3px 7px;
+  border-radius: 4px;
+  color: #596e51;
+  font-size: 8px;
+}
+.operations-categories {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  padding: 0;
+  background: none;
+  border: 0;
+  margin: 22px 0;
+}
+.nova-professional .operations-categories button {
+  font-size: 11px;
+  padding: 9px 15px;
+  background: #fff;
+  border-color: #d9e3cf;
+  color: #596e51;
+}
+.nova-professional .operations-categories button[aria-current="page"] {
+  background: #315c41;
+  border-color: #315c41;
+  color: #fff;
+}
+.nova-professional .operations-center {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+}
+.nova-professional .ops-header {
+  display: none;
+}
+.nova-professional .ops-card,
+.nova-professional .panel {
+  background: #fff;
+  border-color: #dce5d2;
+  box-shadow: none;
+  border-radius: 10px;
+}
+.nova-professional .ops-card {
+  padding: 24px;
+}
+.nova-professional .ops-card h3 {
+  color: #33583b;
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+}
+.nova-professional .ops-card p {
+  font-size: 12px;
+  color: #596e51;
+}
+.nova-professional .ops-eyebrow {
+  color: #596e51;
+  letter-spacing: 0.12em;
+  font-size: 8px;
+}
+.nova-professional .ops-card button {
+  font-size: 11px;
+}
+.nova-professional .ops-note,
+.nova-professional .ops-card small,
+.nova-professional .ops-analysis-meta {
+  font-size: 10px;
+  color: #596e51;
+}
+.nova-professional .ops-upload {
+  background: #f5f8ef;
+  color: #5b7d4f;
+  border-color: #d2e0c3;
+  font-size: 11px;
+}
+.nova-professional .ops-metrics > div {
+  background: #f4f7ee;
+  border-color: #e0e8d7;
+}
+.nova-professional .ops-metrics b {
+  font-size: 25px;
+  color: #42683b;
+}
+.nova-professional .ops-metrics small {
+  font-size: 9px;
+}
+.nova-professional .ops-stock-forms {
+  border-color: #dce5d2;
+}
+.nova-professional .ops-empty {
+  background: #f5f8ef;
+  border-color: #dce7d0;
+}
+.nova-professional td,
+.nova-professional th {
+  border-color: #e5ebdf;
+  font-size: 11px;
+}
+.nova-professional .ops-low-stock {
+  background: #fbf4e7;
+}
+.nova-professional .ops-action-tag {
+  background: #eef4e6;
+  color: #596e51;
+  border-color: #d4e2c5;
+}
+.nova-professional .ops-stale {
+  background: #faf1df;
+  color: #596e51;
+}
+.nova-professional .ops-card-heading {
+  align-items: center;
+}
+.advanced-tools {
+  margin-top: 22px;
+  background: #fff;
+  border: 1px solid #dbe4d1;
+  padding: 0 20px;
+  border-radius: 9px;
+}
+.advanced-tools summary {
+  font-size: 11px;
+  color: #596e51;
+}
+.scenario-builder {
+  background: #fff;
+  border: 1px solid #dbe4d1;
+  border-radius: 10px;
+  margin-bottom: 24px;
+  padding: 0 23px;
+}
+.scenario-builder > summary {
+  font-size: 14px;
+  padding: 20px 0;
+  color: #42683d;
+  font-weight: 500;
+}
+.scenario-builder > summary > span {
+  float: right;
+  font-size: 10px;
+  color: #596e51;
+  font-weight: 400;
+}
+.nova-professional .scenario-builder .mission-panel {
+  box-shadow: none;
+  border: 0;
+  padding: 0 0 20px;
+  background: none;
+}
+.nova-professional .owner-mission > h2 {
+  font-size: 21px;
+  font-weight: 500;
+}
+.nova-professional .owner-mission > p {
+  font-size: 12px;
+}
+.nova-professional .challenge-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.nova-professional .challenge-grid button {
+  background: #f8faf4;
+  border-color: #dce5d2;
+  padding: 16px;
+}
+.nova-professional .challenge-grid b {
+  font-size: 12px;
+  font-weight: 600;
+}
+.nova-professional .challenge-grid small {
+  font-size: 10px;
+  color: #596e51;
+}
+.nova-professional .challenge-result {
+  max-width: 650px;
+}
+.demo-guide h2 {
+  font-size: 26px;
+  font-weight: 500;
+  margin: 10px 0 25px;
+  letter-spacing: -0.6px;
+}
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 30px;
+}
+.guide-grid section > span {
+  font:
+    10px ui-monospace,
+    monospace;
+  color: #596e51;
+}
+.guide-grid h3 {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 10px 0;
+}
+.guide-grid p {
+  font-size: 11px;
+  margin: 0;
+}
+.demo-disclaimer {
+  font-size: 10px;
+  border-top: 1px solid #e3ebd9;
+  padding-top: 20px;
+  margin: 26px 0 0;
+}
+.platform-footer {
+  max-width: 1536px;
+  margin: 28px auto 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  border-top: 1px solid #dce5d3;
+  padding: 18px 0 0;
+  font-size: 9px;
+  color: #596e51;
+  text-align: left;
+}
+.platform-footer > span:first-child {
+  font-weight: 600;
+  color: #596e51;
+}
+.platform-notices {
+  position: absolute;
+  right: 25px;
+  bottom: 24px;
+  z-index: 50;
+  width: 430px;
+  max-width: calc(100vw - 32px);
+  display: grid;
+  gap: 8px;
+}
+.service-notice,
+.error-notice,
+.completion-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 17px;
+  background: #fff;
+  border: 1px solid #cadabd;
+  border-left: 3px solid #7ea864;
+  box-shadow: 0 5px 25px #2c442122;
+  border-radius: 7px;
+}
+.service-notice > span,
+.completion-notice > span {
+  width: 25px;
+  height: 25px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: #e8f0de;
+  border-radius: 50%;
+  color: #596e51;
+  font-size: 12px;
+}
+.service-notice small {
+  display: block;
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.service-notice b {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  margin-top: 3px;
+  color: #4c6c3d;
+}
+.service-notice.warning,
+.error-notice {
+  border-color: #d9bf99;
+  border-left-color: #b68b48;
+}
+.error-notice {
+  font-size: 11px;
+  justify-content: space-between;
+}
+.error-notice p {
+  margin: 0;
+  color: #916d39;
+}
+.error-notice button {
+  min-height: 24px;
+  padding: 4px 8px;
+  font-size: 9px;
+}
+.completion-notice p {
+  font-size: 10px;
+  margin: 3px 0 0;
+}
+.completion-notice b {
+  font-size: 12px;
+  font-weight: 600;
+}
+.completion-notice > button {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  padding: 4px;
+  min-height: 25px;
+}
+.replay-status {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #315543;
+  color: #f6f8ef;
+  padding: 8px 12px;
+  border-radius: 6px;
+  box-shadow: 0 3px 15px #283d3022;
+  z-index: 30;
+}
+.replay-status span {
+  font-size: 9px;
+  white-space: nowrap;
+}
+.replay-status b {
+  font-size: 10px;
+  max-width: 250px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.nova-professional .replay-status button {
+  font-size: 9px;
+  min-height: 26px;
+  padding: 4px 8px;
+  background: #f5f7ec;
+  color: #3c6541;
+  border: 0;
+}
+.replay-transport {
+  margin-bottom: 22px;
+}
+.replay-title h2 {
+  font-size: 25px;
+  font-weight: 500;
+  margin: 8px 0;
+  letter-spacing: -0.5px;
+}
+.replay-title p {
+  font-size: 12px;
+}
+.replay-transport .row label {
+  font-size: 10px;
+}
+.replay-scrubber {
+  margin: 25px 0 18px;
+}
+.replay-scrubber label {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  font-size: 9px;
+  font-weight: 500;
+  color: #596e51;
+}
+.replay-scrubber b {
+  color: #567a45;
+}
+.replay-scrubber input {
+  width: 100%;
+  padding: 0;
+  accent-color: #547f43;
+  margin: 12px 0 0;
+}
+.replay-buttons {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.replay-buttons label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 10px;
+}
+.replay-stage {
+  background: #fff;
+  border: 1px solid #dbe4d0;
+  border-radius: 10px;
+  padding: 20px;
+}
+.replay-stage-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 22px;
+  font-size: 9px;
+  color: #596e51;
+}
+.replay-stage-top > b {
+  font-weight: 600;
+}
+.replay-track {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  margin: 15px 0;
+}
+.replay-track > span {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 120px;
+  font-size: 11px;
+}
+.replay-track small {
+  font-size: 8px;
+  color: #596e51;
+}
+.replay-track > div {
+  position: relative;
+  flex: 1;
+  height: 42px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 calc(25% - 1px),
+      #cedac433 calc(25% - 1px) 25%
+    ),
+    #f0f5e9;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.timeline-task {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  min-width: 2px;
+  border: 1px solid #9db68a;
+  background: #d5e2c9;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.timeline-task span {
+  font:
+    9px/24px ui-monospace,
+    monospace;
+  padding: 0 4px;
+  color: #547345;
+}
+.timeline-task.is-active {
+  background: #507b41;
+  border-color: #507b41;
+}
+.timeline-task.is-active span {
+  color: #fff;
+}
+.timeline-playhead {
+  position: absolute;
+  inset: 0 auto 0;
+  width: 2px;
+  background: #c59a58;
+}
+.replay-axis {
+  margin-left: 138px;
+  display: flex;
+  justify-content: space-between;
+  font:
+    8px ui-monospace,
+    monospace;
+  color: #596e51;
+}
+.replay-outcomes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+.replay-outcomes small {
+  font-size: 8px;
+  letter-spacing: 0.04em;
+}
+.replay-outcomes strong {
+  font-size: 32px;
+  font-weight: 500;
+  display: block;
+  margin-top: 9px;
+  color: #557c47;
+}
+.replay-outcomes i {
+  font-size: 13px;
+  font-style: normal;
+  color: #596e51;
+}
+.replay-plan p,
+.replay-plan li {
+  font-size: 11px;
+  color: #596e51;
+}
+.world-empty {
+  padding: 35px;
+  max-width: 700px;
+}
+.world-empty > span {
+  font-size: 35px;
+  color: #596e51;
+}
+.world-empty h2 {
+  font-size: 25px;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+}
+.world-empty p {
+  font-size: 12px;
+  margin-bottom: 20px;
+}
+.linked-perspectives {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+.linked-perspectives > div {
+  display: flex;
+  gap: 6px;
+}
+.linked-perspectives button {
+  font-size: 10px;
+}
+.professional-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.professional-split .experience-heading h1 {
+  font-size: 25px;
+}
+.professional-split .experience-heading {
+  display: block;
+}
+.professional-split .perspective-toggle {
+  display: inline-flex;
+  margin-top: 15px;
+}
+.professional-split .journey-steps li {
+  font-size: 7px;
+  padding: 9px 7px;
+  gap: 5px;
+}
+.professional-split .journey-steps li > span {
+  width: 16px;
+  height: 16px;
+  font-size: 7px;
+}
+.professional-split .service-floor-layout {
+  display: block;
+}
+.professional-split .service-task-column {
+  margin-top: 18px;
+}
+.professional-split .first-person-scene {
+  height: 340px;
+}
+.professional-split .service-ticket-list {
+  grid-template-columns: 1fr 1fr;
+}
+.professional-split .experience-context {
+  display: block;
+}
+.professional-split .experience-context > button {
+  margin-top: 12px;
+}
+.professional-split .service-summary {
+  display: none;
+}
+@keyframes scene-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (min-width: 1700px) {
+  .service-floor-layout {
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 28px;
+  }
+  .platform-main {
+    padding-top: 34px;
+  }
+  .first-person-scene {
+    height: 58dvh;
+  }
+}
+@media (max-width: 1100px) {
+  .platform-header {
+    padding: 0 23px;
+    gap: 16px;
+  }
+  .platform-brand small {
+    font-size: 8px;
+  }
+  .perspective-nav {
+    gap: 1px;
+  }
+  .nova-professional .perspective-nav button {
+    font-size: 10px;
+    padding: 8px 10px;
+  }
+  .platform-connection > span {
+    font-size: 9px;
+  }
+  .platform-connection small {
+    font-size: 8px;
+  }
+  .platform-subnav {
+    padding: 0 23px;
+  }
+  .platform-subnav > nav {
+    gap: 20px;
+  }
+  .platform-main {
+    padding: 25px 23px;
+  }
+  .service-floor-layout {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 18px;
+  }
+  .first-person-scene {
+    height: 440px;
+  }
+  .experience-context {
+    padding: 16px;
+    gap: 14px;
+  }
+  .experience-context > b {
+    font-size: 12px;
+  }
+  .experience-context > button {
+    min-width: 135px;
+    font-size: 10px;
+  }
+  .arrival-card {
+    padding: 22px;
+  }
+  .arrival-card h2 {
+    font-size: 21px;
+  }
+  .arrival-card > p {
+    font-size: 11px;
+  }
+  .arrival-detail {
+    margin: 19px 0;
+    gap: 12px;
+  }
+  .journey-steps li {
+    font-size: 9px;
+    padding: 12px 14px;
+    gap: 8px;
+  }
+  .service-ticket-list {
+    grid-template-columns: 1fr 1fr;
+  }
+  .service-scene .room-hud {
+    display: none;
+  }
+  .scene-instructions {
+    gap: 10px;
+    font-size: 8px;
+    padding: 8px 10px;
+  }
+  .scene-instructions kbd {
+    font-size: 7px;
+  }
+  .perspective-handoff {
+    gap: 9px;
+  }
+  .perspective-handoff > span {
+    font-size: 9px;
+    flex-basis: 100%;
+  }
+  .perspective-handoff button {
+    font-size: 9px;
+  }
+  .service-task-column .mission-panel {
+    padding: 20px !important;
+  }
+}
+@media (max-width: 850px) {
+  .platform-header {
+    height: 83px;
+    padding: 0 18px;
+    gap: 12px;
+  }
+  .platform-brand {
+    gap: 8px;
+  }
+  .nova-mark {
+    width: 35px;
+    height: 39px;
+    font-size: 30px;
+    border-radius: 8px 8px 8px 2px;
+  }
+  .platform-brand b {
+    font-size: 24px;
+  }
+  .platform-brand small {
+    display: none;
+  }
+  .nova-professional .perspective-nav button {
+    font-size: 9px;
+    padding: 8px;
+  }
+  .platform-connection small {
+    display: none;
+  }
+  .platform-connection > span {
+    font-size: 8px;
+  }
+  .platform-subnav {
+    height: 54px;
+    padding: 0 18px;
+  }
+  .platform-subnav > nav {
+    gap: 20px;
+  }
+  .platform-subnav > div > span {
+    display: none;
+  }
+  .platform-main {
+    top: 137px;
+    padding: 23px 18px;
+  }
+  .experience-heading h1,
+  .page-heading h1 {
+    font-size: 29px;
+  }
+  .experience-heading p,
+  .page-heading p {
+    font-size: 11px;
+  }
+  .eyebrow {
+    font-size: 8px;
+  }
+  .service-floor-layout {
+    grid-template-columns: minmax(0, 1fr) 276px;
+    gap: 15px;
+  }
+  .experience-context {
+    display: block;
+  }
+  .experience-context > button {
+    margin-top: 14px;
+    width: 100%;
+  }
+  .journey-steps li {
+    font-size: 8px;
+    padding: 10px;
+    gap: 6px;
+  }
+  .journey-steps li > span {
+    width: 19px;
+    height: 19px;
+    font-size: 8px;
+  }
+  .first-person-scene {
+    height: 410px;
+  }
+  .scene-instructions span:nth-child(3) {
+    display: none;
+  }
+  .arrival-card {
+    padding: 19px;
+  }
+  .arrival-card h2 {
+    font-size: 20px;
+  }
+  .arrival-card > p {
+    font-size: 11px;
+  }
+  .service-task-column .mission-panel {
+    padding: 19px !important;
+  }
+  .nova-professional .mission-panel h2 {
+    font-size: 21px;
+  }
+  .inventory-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .guide-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .nova-professional .challenge-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .scenario-builder > summary > span {
+    display: block;
+    float: none;
+    margin-top: 7px;
+  }
+  .platform-footer {
+    font-size: 8px;
+  }
+  .floor-caption {
+    font-size: 7px;
+    padding: 9px 12px;
+  }
+  .floor-caption > span:last-child {
+    display: none;
+  }
+  .professional-split {
+    gap: 15px;
+  }
+  .professional-split .first-person-scene {
+    height: 290px;
+  }
+  .professional-split .journey-steps {
+    display: none;
+  }
+  .professional-split .perspective-handoff {
+    display: none;
+  }
+}
+@media (max-width: 680px) {
+  .platform-header {
+    height: 111px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-content: center;
+    gap: 11px 20px;
+    padding: 12px 16px;
+  }
+  .platform-brand {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .nova-mark {
+    width: 29px;
+    height: 33px;
+    font-size: 25px;
+  }
+  .platform-brand b {
+    font-size: 21px;
+  }
+  .platform-brand small {
+    display: block;
+    font-size: 7px;
+    margin: 0;
+  }
+  .platform-brand > div {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+  }
+  .platform-connection {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .platform-connection > span {
+    font-size: 8px;
+  }
+  .perspective-nav {
+    grid-column: 1/3;
+    grid-row: 2;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 3px;
+    border-radius: 7px;
+  }
+  .nova-professional .perspective-nav button {
+    font-size: 9px;
+    padding: 6px 8px;
+    min-height: 28px;
+  }
+  .platform-subnav {
+    height: 49px;
+    padding: 0 16px;
+  }
+  .platform-subnav > nav {
+    gap: 20px;
+    flex: 1;
+    justify-content: space-between;
+  }
+  .nova-professional .platform-subnav > nav button {
+    font-size: 9px;
+  }
+  .platform-subnav > div {
+    display: none;
+  }
+  .platform-main {
+    top: 160px;
+    padding: 21px 16px;
+  }
+  .page-heading h1,
+  .experience-heading h1 {
+    font-size: 27px;
+    letter-spacing: -0.9px;
+  }
+  .experience-heading {
+    align-items: flex-start;
+    gap: 15px;
+  }
+  .experience-heading p,
+  .page-heading p {
+    font-size: 10px;
+    max-width: 300px;
+  }
+  .perspective-toggle {
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin-top: 15px;
+  }
+  .nova-professional .perspective-toggle button {
+    padding: 6px 9px;
+    font-size: 8px;
+    min-height: 28px;
+  }
+  .experience-heading .eyebrow {
+    font-size: 7px;
+  }
+  .experience-heading h1 {
+    font-size: 25px;
+    max-width: 240px;
+  }
+  .service-floor-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .journey-steps {
+    margin-bottom: 18px;
+  }
+  .journey-steps li {
+    font-size: 7px;
+    gap: 5px;
+    padding: 10px 7px;
+  }
+  .journey-steps li > span {
+    width: 17px;
+    height: 17px;
+    font-size: 7px;
+  }
+  .first-person-scene {
+    height: 380px;
+  }
+  .scene-location {
+    font-size: 8px;
+    left: 12px;
+    top: 12px;
+    padding: 6px 9px;
+  }
+  .scene-instructions {
+    bottom: 12px;
+    font-size: 8px;
+    padding: 8px 10px;
+  }
+  .experience-context {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 16px;
+  }
+  .experience-context > button {
+    margin: 0;
+    width: auto;
+    min-width: 125px;
+    font-size: 9px;
+    flex-shrink: 0;
+  }
+  .experience-context b {
+    font-size: 12px;
+  }
+  .experience-context p {
+    font-size: 9px;
+  }
+  .experience-context .eyebrow {
+    font-size: 7px;
+  }
+  .perspective-handoff {
+    gap: 14px;
+    margin-top: 12px;
+  }
+  .perspective-handoff > span {
+    flex-basis: 100%;
+    font-size: 8px;
+  }
+  .nova-professional .perspective-handoff button {
+    font-size: 9px;
+  }
+  .arrival-card h2 {
+    font-size: 23px;
+    max-width: 330px;
+  }
+  .arrival-detail {
+    display: inline-flex;
+    width: 100%;
+    margin: 13px 0;
+  }
+  .arrival-card > p {
+    font-size: 11px;
+  }
+  .service-task-column .mission-panel {
+    padding: 22px !important;
+  }
+  .nova-professional .game-menu-item > .quantity-editor {
+    flex-basis: auto;
+  }
+  .nova-professional .game-menu-item b {
+    font-size: 12px;
+  }
+  .nova-professional .game-menu-item small {
+    font-size: 9px;
+  }
+  .nova-professional .food-shelf button > span {
+    font-size: 32px;
+  }
+  .service-ticket-list {
+    grid-template-columns: 1fr 1fr;
+  }
+  .service-task-column .service-summary {
+    padding: 22px;
+  }
+  .summary-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 15px;
+  }
+  .summary-stats b {
+    font-size: 25px;
+  }
+  .summary-stats small {
+    font-size: 8px;
+  }
+  .inventory-grid {
+    gap: 11px;
+  }
+  .nova-professional .inventory-card {
+    padding: 15px;
+  }
+  .inventory-card-top {
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .inventory-card-top > small {
+    font-size: 6px;
+    max-width: 55px;
+  }
+  .inventory-card-top em {
+    font-size: 6px;
+    padding: 3px 4px;
+  }
+  .inventory-card-main {
+    margin: 18px 0;
+    gap: 8px;
+  }
+  .inventory-card-main > b {
+    font-size: 13px;
+  }
+  .inventory-card-main > strong {
+    font-size: 27px;
+  }
+  .inventory-card-main > strong small {
+    font-size: 7px;
+  }
+  .stock-progress > span {
+    font-size: 7px;
+    gap: 8px;
+  }
+  .stock-progress > span small {
+    font-size: 6px;
+  }
+  .ai-brief {
+    padding: 17px;
+    gap: 11px;
+  }
+  .ai-symbol {
+    flex-basis: 28px;
+    height: 28px;
+    font-size: 20px;
+    border-radius: 6px;
+  }
+  .ai-brief p {
+    font-size: 11px;
+  }
+  .ai-brief small {
+    font-size: 8px;
+  }
+  .advisory-chip {
+    font-size: 6px;
+    padding: 3px 5px;
+  }
+  .operations-categories {
+    gap: 6px;
+    margin: 18px 0;
+  }
+  .nova-professional .operations-categories button {
+    font-size: 10px;
+    padding: 8px 11px;
+  }
+  .nova-professional .ops-card {
+    padding: 18px;
+  }
+  .nova-professional .ops-card-heading {
+    display: block;
+  }
+  .nova-professional .ops-card-heading button {
+    margin-top: 12px;
+  }
+  .nova-professional .ops-card h3 {
+    font-size: 20px;
+  }
+  .nova-professional .ops-card p {
+    font-size: 11px;
+  }
+  .nova-professional .ops-stock-forms {
+    grid-template-columns: 1fr;
+  }
+  .nova-professional .ops-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .nova-professional .ops-metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+  .nova-professional .ops-card td,
+  .nova-professional .ops-card th {
+    font-size: 10px;
+  }
+  .guide-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .guide-grid h3 {
+    font-size: 12px;
+  }
+  .guide-grid p {
+    font-size: 10px;
+  }
+  .demo-guide {
+    padding: 20px;
+  }
+  .demo-guide h2 {
+    font-size: 23px;
+  }
+  .demo-disclaimer {
+    font-size: 9px;
+  }
+  .scenario-builder {
+    padding: 0 18px;
+  }
+  .scenario-builder > summary {
+    font-size: 13px;
+  }
+  .scenario-builder > summary > span {
+    font-size: 9px;
+  }
+  .nova-professional .challenge-grid button {
+    padding: 13px;
+  }
+  .nova-professional .challenge-grid small {
+    font-size: 9px;
+  }
+  .replay-transport {
+    padding: 18px;
+  }
+  .replay-title h2 {
+    font-size: 22px;
+  }
+  .replay-title p {
+    font-size: 11px;
+  }
+  .replay-transport label,
+  .replay-transport button {
+    font-size: 10px;
+  }
+  .replay-transport select {
+    max-width: 260px;
+  }
+  .replay-scrubber label {
+    font-size: 8px;
+  }
+  .replay-buttons {
+    gap: 8px;
+  }
+  .replay-buttons button {
+    font-size: 10px;
+  }
+  .replay-stage {
+    padding: 16px 12px;
+  }
+  .replay-stage-top {
+    font-size: 7px;
+  }
+  .replay-track {
+    gap: 8px;
+  }
+  .replay-track > span {
+    flex-basis: 65px;
+    font-size: 9px;
+  }
+  .replay-track small {
+    display: none;
+  }
+  .replay-axis {
+    margin-left: 73px;
+    font-size: 6px;
+  }
+  .timeline-task span {
+    font-size: 6px;
+    padding: 0 2px;
+  }
+  .replay-outcomes {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .replay-outcomes .surface-panel {
+    padding: 16px;
+  }
+  .replay-outcomes small {
+    font-size: 7px;
+  }
+  .replay-outcomes strong {
+    font-size: 28px;
+  }
+  .replay-outcomes i {
+    font-size: 12px;
+  }
+  .replay-plan {
+    padding: 18px;
+  }
+  .replay-status {
+    max-width: 94%;
+    gap: 10px;
+    padding: 7px 9px;
+    bottom: 8px;
+  }
+  .replay-status span {
+    font-size: 8px;
+  }
+  .replay-status b {
+    display: none;
+  }
+  .platform-notices {
+    right: 16px;
+    bottom: 16px;
+  }
+  .service-notice,
+  .error-notice,
+  .completion-notice {
+    padding: 12px 14px;
+  }
+  .completion-notice p {
+    font-size: 9px;
+  }
+  .platform-footer {
+    font-size: 7px;
+    gap: 15px;
+    align-items: flex-start;
+  }
+  .platform-footer > span:last-child {
+    max-width: 185px;
+    text-align: right;
+  }
+  .professional-split {
+    grid-template-columns: 1fr;
+  }
+  .professional-split .first-person-scene {
+    height: 340px;
+  }
+  .professional-split .service-summary {
+    display: block;
+  }
+  .linked-perspectives {
+    display: block;
+  }
+  .linked-perspectives > div {
+    margin-top: 10px;
+  }
+  .professional-split .service-task-column {
+    margin-bottom: 22px;
+  }
+}
+@media (max-width: 400px) {
+  .nova-professional .perspective-nav button {
+    font-size: 8px;
+    padding: 6px;
+  }
+  .platform-brand > div {
+    gap: 7px;
+  }
+  .platform-subnav > nav {
+    gap: 14px;
+  }
+  .experience-heading {
+    display: block;
+  }
+  .perspective-toggle {
+    display: inline-flex;
+    margin-top: 15px;
+  }
+  .experience-heading h1 {
+    max-width: none;
+  }
+  .first-person-scene {
+    height: 335px;
+  }
+  .journey-steps li {
+    font-size: 6px;
+    padding: 9px 6px;
+    gap: 4px;
+  }
+  .journey-steps li > span {
+    width: 15px;
+    height: 15px;
+    font-size: 6px;
+  }
+  .experience-context {
+    display: block;
+  }
+  .experience-context > button {
+    margin-top: 13px;
+    width: 100%;
+    font-size: 10px;
+  }
+  .nova-professional .game-menu-item > .quantity-editor {
+    flex-basis: 100%;
+  }
+  .summary-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+  .guide-grid {
+    grid-template-columns: 1fr;
+  }
+  .inventory-card-top {
+    display: block;
+  }
+  .inventory-card-top em {
+    display: inline-block;
+    margin-top: 5px;
+  }
+  .stock-progress > span {
+    display: block;
+  }
+  .stock-progress > span small {
+    display: block;
+    margin-top: 4px;
+  }
+  .scene-instructions {
+    gap: 9px;
+    font-size: 7px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nova-professional *,
+  .nova-professional *:before,
+  .nova-professional *:after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+.customer-scene {
+  min-height: clamp(370px, 52dvh, 620px);
+}
+@media (min-width: 1700px) {
+  .customer-scene {
+    min-height: 58dvh;
+  }
+}
+@media (max-width: 1100px) {
+  .customer-scene {
+    min-height: 440px;
+  }
+}
+@media (max-width: 850px) {
+  .customer-scene {
+    min-height: 410px;
+  }
+}
+@media (max-width: 680px) {
+  .customer-scene {
+    min-height: 380px;
+  }
+  .professional-split .customer-scene {
+    min-height: 340px;
+  }
+}
+@media (max-width: 400px) {
+  .customer-scene {
+    min-height: 335px;
+  }
+}

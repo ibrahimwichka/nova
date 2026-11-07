@@ -1,101 +1,559 @@
-import React, { useEffect, useState } from 'react';
-import { deliveryProgress } from '../shared/delivery.mjs';
-import './delivery.css';
-
-const DELIVERY_STEPS = [
-  ['waiting', 'Kitchen'],
-  ['at_restaurant', 'Pickup'],
-  ['on_way', 'On the way'],
-  ['at_home', 'At the door'],
-  ['delivered', 'Confirmed'],
-];
-
-function CourierMarker({ x, y, delivered }) {
+import React, { useEffect, useState } from "react";
+import { deliveryProgress } from "../shared/delivery.mjs";
+import {
+  APPROACH_ROUTE,
+  deliveryRoute,
+  routePose,
+  routePoints,
+} from "../shared/courier-route.mjs";
+import { MapPin, Panel } from "./UI.jsx";
+import "./delivery.css";
+const STEPS = ["Packed", "Out for delivery", "Arriving", "Delivered"];
+function CourierMarker({ pose, delivered, moving }) {
   return (
-    <g className="courier-sprite" style={{ transform: `translate(${x}px, ${y}px)` }} aria-hidden="true">
-      <ellipse cy="14" rx="27" ry="7" fill="#071b15" opacity=".55"/>
-      {delivered ? <>
-        <circle r="17" fill="#a5d5a4" stroke="#183a2e" strokeWidth="2"/>
-        <path d="m-8 0 5 6 11-12" fill="none" stroke="#19382a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-      </> : <g className="courier-bike">
-        <circle cx="-17" cy="8" r="8" fill="#172c27" stroke="#aebfb1" strokeWidth="2"/>
-        <circle cx="19" cy="8" r="8" fill="#172c27" stroke="#aebfb1" strokeWidth="2"/>
-        <path d="M-23 1c1-6 6-9 12-9H0l5 10h6l5-12c5 0 8 3 9 9l-6 1-8 8H-12Z" fill="#f6c584" stroke="#253831" strokeWidth="2" strokeLinejoin="round"/>
-        <path d="m13 4 6-19 6-1" fill="none" stroke="#e4e8d6" strokeWidth="2.5" strokeLinecap="round"/>
-        <path className="courier-headlight" d="m24-8 8 2-8 2Z" fill="#fff3ad"/>
-        <rect x="-27" y="-19" width="16" height="12" rx="2.5" fill="#d58555" stroke="#253831" strokeWidth="1.5"/>
-        <path d="M-22-15h6m2 5H-2" fill="none" stroke="#fbdfb6" strokeWidth="2" strokeLinecap="round"/>
-      </g>}
-      <rect x="-34" y="-47" width="68" height="20" rx="5" fill="#163b2e" stroke="#acc7a5"/>
-      <text y="-34" textAnchor="middle" fontSize="9" fontWeight="800" letterSpacing="1" fill="#ecf5e2">{delivered ? 'ARRIVED' : 'COURIER'}</text>
+    <g
+      className="courier-sprite"
+      transform={`translate(${pose.x},${pose.y})`}
+      aria-hidden="true"
+    >
+      <circle r="31" fill="#9bcfcb" opacity=".07" />
+      <g transform={`rotate(${pose.heading})`}>
+        {moving && (
+          <g
+            stroke="#9bcfcb"
+            strokeWidth="2"
+            strokeLinecap="round"
+            opacity=".7"
+          >
+            <path d="M-34-7h-18m18 14h-25m28-7h-17" />
+          </g>
+        )}
+        {delivered ? (
+          <g transform={`rotate(${-pose.heading})`}>
+            <circle r="18" fill="#7ae8d9" />
+            <path
+              d="m-9 0 6 6 12-13"
+              stroke="#13282e"
+              strokeWidth="3"
+              fill="none"
+            />
+          </g>
+        ) : (
+          <>
+            <ellipse cy="8" rx="26" ry="7" fill="#05070c" opacity=".5" />
+            <circle
+              cx="-17"
+              cy="8"
+              r="7"
+              fill="#100d1a"
+              stroke="#cfb5d7"
+              strokeWidth="2"
+            />
+            <circle
+              cx="19"
+              cy="8"
+              r="7"
+              fill="#100d1a"
+              stroke="#cfb5d7"
+              strokeWidth="2"
+            />
+            <path
+              d="M-23 0q3-11 15-10h10l5 12h7l4-15 9 2-4 16-11 10h-23Z"
+              fill="#ff9b5d"
+              stroke="#28172f"
+              strokeWidth="2"
+            />
+            <path
+              d="m15 0 5-16 8-1"
+              fill="none"
+              stroke="#e8e1ee"
+              strokeWidth="3"
+            />
+            <rect
+              x="-28"
+              y="-25"
+              width="21"
+              height="17"
+              rx="3"
+              fill="#8fba9c"
+              stroke="#ffb1d1"
+              strokeWidth="1.5"
+            />
+            <path d="M-23-20h11" stroke="#ffd9e9" strokeWidth="2" />
+            <circle cx="0" cy="-17" r="6" fill="#f4d0b3" />
+            <path
+              d="m0-11 4 10h10"
+              stroke="#9ce9e6"
+              strokeWidth="5"
+              fill="none"
+              strokeLinecap="round"
+            />
+          </>
+        )}
+      </g>
+      <rect
+        x="-36"
+        y="-59"
+        width="72"
+        height="21"
+        rx="3"
+        fill="#193e48"
+        stroke="#9ecfce"
+        strokeOpacity=".65"
+      />
+      <text
+        y="-45"
+        fill="#d3eeeb"
+        textAnchor="middle"
+        fontSize="9"
+        fontWeight="700"
+        letterSpacing="1"
+      >
+        {delivered ? "RECEIVED" : "COURIER"}
+      </text>
     </g>
   );
 }
-
-export function DeliveryJourney({ order, act, busy, clockOffset = 0, readOnly = false }) {
-  const [now,setNow] = useState(Date.now() + clockOffset);
-  useEffect(() => { const timer=setInterval(()=>setNow(Date.now()+clockOffset),100); return ()=>clearInterval(timer); },[clockOffset]);
-  if (!order?.delivery) return null;
-  const d=order.delivery, trip=deliveryProgress(order,now);
-  const label={waiting:'Kitchen preparing your order',to_restaurant:'Courier heading to restaurant',at_restaurant:'Courier waiting for pickup',on_way:'On the way to your house',at_home:'Courier at your door',delivered:'Delivery confirmed'}[trip.stage];
-  const onRoad=['on_way','at_home','delivered'].includes(trip.stage);
-  const x=onRoad?130+trip.progress*500:trip.stage==='to_restaurant'?60+trip.progress*70:trip.stage==='waiting'?55:130;
-  const y=onRoad?150:165;
-  const stageIndex = DELIVERY_STEPS.findIndex(([stage]) => stage === (trip.stage === 'to_restaurant' ? 'at_restaurant' : trip.stage));
-  return <section className={'delivery-journey '+(trip.stage==='delivered'?'trip-complete':'')} aria-label={'Delivery tracking for '+order.id}>
-    <div className="delivery-heading"><div><small>SIMULATED DELIVERY · {order.id}</small><h3>{label}</h3></div><span>{trip.stage==='delivered'?'✓ Delivered':trip.stage==='at_home'?'At door':onRoad?trip.seconds+'s to door':trip.stage==='to_restaurant'?trip.seconds+'s to pickup':d.distanceKm+' km'}</span></div>
-    <svg className="delivery-map" viewBox="0 0 760 240" role="img" aria-label={`Simulated courier route from Nova Kitchen to ${d.name}`}>
-      <rect width="760" height="240" rx="12" fill="#193b31"/>
-      <g fill="none" stroke="#6d917b" strokeWidth="12" opacity=".24">
-        <path d="M207 0v81l64 57v102M505 0v75l-52 64v101M0 62h184m45 0h259m37 0h235"/>
+export function DistrictMap({ order, trip }) {
+  const route = deliveryRoute(order?.delivery?.id || order?.delivery?.homeId),
+    destination = route.at(-1);
+  const onRoad = ["on_way", "at_home", "delivered"].includes(trip?.stage),
+    approaching = trip?.stage === "to_restaurant";
+  const pose = routePose(
+    onRoad ? route : APPROACH_ROUTE,
+    onRoad
+      ? trip.progress
+      : approaching
+        ? trip.progress
+        : trip?.stage === "at_restaurant"
+          ? 1
+          : 0,
+  );
+  return (
+    <svg
+      className="district-map"
+      viewBox="0 0 1120 600"
+      role="img"
+      aria-label={`Live simulated delivery map from Nova Kitchen to ${order?.delivery?.name || "the neighborhood"}`}
+    >
+      <defs>
+        <pattern
+          id="district-grid"
+          width="40"
+          height="40"
+          patternUnits="userSpaceOnUse"
+        >
+          <path d="M40 0H0V40" fill="none" stroke="#264750" strokeWidth=".5" />
+        </pattern>
+        <linearGradient id="river-color">
+          <stop stopColor="#274c62" />
+          <stop offset="1" stopColor="#1d3b50" />
+        </linearGradient>
+      </defs>
+      <rect width="1120" height="600" fill="#112b32" />
+      <rect width="1120" height="600" fill="url(#district-grid)" />
+      <path
+        d="M860-20q-170 90-100 230t-70 220q-80 70-35 190h120q-40-110 40-180t40-200q-50-135 120-240Z"
+        fill="url(#river-color)"
+        stroke="#36718c"
+        strokeOpacity=".35"
+      />
+      <g fill="#25444c" stroke="#587d7d" strokeOpacity=".4">
+        {[
+          [50, 50, 210, 180],
+          [280, 45, 230, 95],
+          [405, 260, 170, 60],
+          [225, 395, 105, 55],
+          [50, 260, 80, 60],
+          [65, 515, 225, 55],
+          [410, 400, 170, 150],
+          [840, 260, 225, 135],
+          [940, 45, 125, 115],
+          [865, 520, 210, 50],
+        ].map(([x, y, w, h], i) => (
+          <rect key={i} x={x} y={y} width={w} height={h} rx="5" />
+        ))}
       </g>
-      <g fill="#345748" stroke="#89a48a" strokeOpacity=".22">
-        <rect x="272" y="22" width="76" height="24" rx="6"/><rect x="365" y="22" width="80" height="24" rx="6"/>
-        <rect x="303" y="83" width="92" height="35" rx="8"/><rect x="488" y="189" width="56" height="26" rx="6"/>
+      <g
+        fill="none"
+        stroke="#34575e"
+        strokeWidth="23"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M-20 365H1120M180-20V620M370-20v620M-20 480h1140M-20 220H1120M600-20v640M720-20v640M925-20v640M520 100h620M600 130h500" />
       </g>
-      <path d="M20 160H740" stroke="#142c26" strokeWidth="47" strokeLinecap="round"/>
-      <path d="M25 160H735" stroke="#789280" strokeWidth="2" strokeDasharray="11 11"/>
-      <path d="M130 160H630" stroke="#a4c5a8" strokeWidth="6" opacity=".43" strokeLinecap="round"/>
-      {onRoad && <path d={`M130 160H${x}`} stroke="#ffc779" strokeWidth="6" strokeLinecap="round"/>}
-      <circle cx="130" cy="160" r="7" fill="#abd0ab" stroke="#142c26" strokeWidth="2"/>
-      <circle cx="630" cy="160" r="7" fill="#ffc779" stroke="#142c26" strokeWidth="2"/>
-      <g transform="translate(85,27)">
-        <rect y="22" width="95" height="62" rx="6" fill="#d5b183"/>
-        <path d="M-9 22h113L87 0H8Z" fill="#83a590"/>
-        <rect x="10" y="36" width="27" height="27" fill="#e6efe2"/>
-        <rect x="61" y="39" width="20" height="45" rx="2" fill="#4d6a5b"/>
-        <text x="47" y="105" textAnchor="middle" fontSize="12" fontWeight="800" fill="#eff5e5">NOVA KITCHEN</text>
+      <g fill="none" stroke="#82a39c" strokeWidth="1" opacity=".35">
+        <path d="M-20 365H1120M180-20V620M370-20v620M-20 480h1140M-20 220H1120M600-20v640M720-20v640M925-20v640M520 100h620M600 130h500" />
       </g>
-      <g transform="translate(583,20)">
-        <path d="M-10 39L47 0l57 39" fill={d.color}/>
-        <rect y="36" width="94" height="59" rx="4" fill="#e7d5b5"/>
-        <rect x="38" y="57" width="22" height="38" fill="#806b50"/>
-        <rect x="10" y="51" width="19" height="20" fill="#7a9c89"/>
-        <rect x="67" y="51" width="18" height="20" fill="#7a9c89"/>
-        <text x="47" y="113" textAnchor="middle" fontSize="12" fontWeight="800" fill="#eff5e5">{d.name.toUpperCase()}</text>
+      <g fontSize="9" letterSpacing="3" fill="#aac6bb" opacity=".75">
+        <text x="450" y="356">
+          SUNSET BLVD
+        </text>
+        <text x="410" y="470">
+          PALM AVENUE
+        </text>
+        <text x="415" y="208">
+          NOVA DRIVE
+        </text>
+        <text x="90" y="100">
+          SERVICE
+        </text>
+        <text x="90" y="116">
+          DISTRICT
+        </text>
+        <text x="855" y="333">
+          RESIDENTIAL
+        </text>
+        <text x="855" y="349">
+          QUARTER
+        </text>
+        <text
+          transform="translate(805,380) rotate(-73)"
+          fill="#689cb4"
+          fontSize="8"
+        >
+          THE RIVER
+        </text>
       </g>
-      <CourierMarker x={x} y={y} delivered={trip.stage === 'delivered'}/>
-      <text x="380" y="219" textAnchor="middle" fontSize="12" fill="#d3e4d1">{onRoad ? `${trip.remainingKm.toFixed(1)} km remaining` : `${d.distanceKm} km to ${d.name}`}</text>
+      <g fill="#587770" stroke="#9bb9a7" strokeOpacity=".4">
+        {[
+          [65, 270],
+          [85, 293],
+          [110, 270],
+          [444, 80],
+          [470, 80],
+          [445, 110],
+          [990, 295],
+          [1035, 295],
+          [990, 350],
+          [1035, 350],
+        ].map(([x, y], i) => (
+          <rect key={i} x={x} y={y} width="20" height="16" rx="2" />
+        ))}
+      </g>
+      <polyline
+        points={routePoints(route)}
+        fill="none"
+        stroke="#8fba9c"
+        strokeWidth="16"
+        strokeOpacity=".08"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      <polyline
+        points={routePoints(route)}
+        fill="none"
+        stroke="#9ec1a6"
+        strokeWidth="3"
+        strokeDasharray="5 6"
+        strokeLinejoin="round"
+      />
+      {onRoad && (
+        <>
+          <polyline
+            points={routePoints(pose.traveled)}
+            fill="none"
+            stroke="#9bcfcb"
+            strokeOpacity=".12"
+            strokeWidth="13"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <polyline
+            points={routePoints(pose.traveled)}
+            fill="none"
+            stroke="#c5e9dc"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </>
+      )}
+      <g transform="translate(180,315)">
+        <rect
+          x="-39"
+          y="-48"
+          width="78"
+          height="45"
+          rx="3"
+          fill="#a45f7b"
+          stroke="#fac5d5"
+        />
+        <path d="M-44-48h88l-10-15h-68Z" fill="#e99378" />
+        <path
+          d="M-30-48v13m12-13v13m12-13v13m12-13v13m12-13v13m12-13v13"
+          stroke="#63334f"
+          strokeWidth="8"
+        />
+        <rect x="-6" y="-24" width="16" height="21" fill="#28162d" />
+        <rect x="-30" y="-25" width="17" height="12" fill="#70d9e6" />
+        <text
+          y="-77"
+          fill="#e4eddb"
+          fontSize="10"
+          fontWeight="700"
+          textAnchor="middle"
+          letterSpacing="2"
+        >
+          NOVA KITCHEN
+        </text>
+        <path d="M0 0v25" stroke="#ff7dad" strokeWidth="2" />
+      </g>
+      <MapPin x={180} y={365} color="#cee6ba" />
+      <g transform={`translate(${destination.x},${destination.y - 25})`}>
+        <path d="M-23-30 0-49l23 19" fill="#da8d88" />
+        <rect x="-19" y="-30" width="38" height="29" rx="2" fill="#b9a2b7" />
+        <rect x="-4" y="-17" width="9" height="16" fill="#4b3a59" />
+        <rect x="-14" y="-21" width="7" height="7" fill="#ffdf95" />
+        <text
+          y="-64"
+          textAnchor="middle"
+          fill="#f4e8c4"
+          fontSize="10"
+          fontWeight="700"
+          letterSpacing="1"
+        >
+          {order?.delivery?.name?.toUpperCase() || "MAPLE HOUSE"}
+        </text>
+      </g>
+      <MapPin x={destination.x} y={destination.y} color="#e4d39c" />
+      {trip && (
+        <CourierMarker
+          {...{ pose }}
+          delivered={trip.stage === "delivered"}
+          moving={approaching || trip.stage === "on_way"}
+        />
+      )}
+      <g transform="translate(52,550)" fill="#dfc8da">
+        <circle r="22" fill="#130d1e" stroke="#a27d9f" />
+        <path d="m0-14 5 20-5-4-5 4Z" fill="#ff9cbb" />
+        <text y="-29" textAnchor="middle" fontSize="8">
+          N
+        </text>
+      </g>
+      <text
+        x="1065"
+        y="566"
+        textAnchor="end"
+        fill="#c29fb9"
+        fontSize="8"
+        letterSpacing="2"
+      >
+        NOVA DISTRICT / SIMULATED
+      </text>
     </svg>
-    <div className="delivery-stages" aria-label="Delivery progress">
-      {DELIVERY_STEPS.map(([stage, text], index) => <span key={stage} aria-current={index === stageIndex ? 'step' : undefined} className={index < stageIndex ? 'reached' : ''}>{text}</span>)}
-    </div>
-    <p className="delivery-note">{d.distanceKm} km demo distance · {d.simulatedMinutes} estimated real-world minutes represented by {d.travelSeconds} game seconds. No GPS, real address, or actual delivery.</p>
-    {!readOnly&&trip.stage==='at_restaurant'&&<button className="game-primary" disabled={!!busy} onClick={()=>act('/orders/'+order.id+'/collect',{code:order.pickupCode})}>Match reference & let courier collect →</button>}
-    {!readOnly&&trip.stage==='at_home'&&<button className="game-primary" disabled={!!busy} onClick={()=>act('/orders/'+order.id+'/deliver')}>Confirm delivery received at house ✓</button>}
-    {trip.stage==='delivered'&&<p className="delivery-confirmation">✓ Received at {d.name}. Confirmation is shared with the kitchen and owner.</p>}
-  </section>;
+  );
 }
-export function DeliveryBoard({state,act,busy,clockOffset,readOnly=false,preferredOrderId=''}) {
-  const [selected,setSelected]=useState('');
-  const orders=[...state.orders].reverse().filter(o=>o.delivery&&o.status!=='cancelled');
-  useEffect(()=>{if(preferredOrderId)setSelected(preferredOrderId);},[preferredOrderId]);
-  const order=orders.find(o=>o.id===selected)||orders.find(o=>o.id===preferredOrderId)||orders.find(o=>o.status!=='delivered')||orders[0];
-  if(orders.length===0) return <section id="delivery-simulator" aria-label="Delivery simulator" className="delivery-board delivery-main-stage delivery-idle">
-    <span aria-hidden="true">🏪 → 🛵 → 🏡</span><div><b>Delivery simulator</b><p>No deliveries yet. Choose Delivery when ordering and the courier's trip will show here.</p></div>
-  </section>;
-  return <section id="delivery-simulator" aria-label="Delivery simulator" className="delivery-board delivery-main-stage">
-    <div className="delivery-stage-header"><div><small>LIVE DELIVERY STAGE</small><h2>Delivery simulator</h2><p>Follow a courier from pickup to the customer’s door.</p></div><div className="delivery-stage-links"><span>{orders.length} delivery {orders.length===1?'order':'orders'}</span><a href="#restaurant-floor">Restaurant floor ↓</a></div></div>
-    {orders.length>0?<><div className="delivery-order-tabs" aria-label="Choose delivery order">{orders.map(o=><button key={o.id} className={o.id===order.id?'selected':''} onClick={()=>setSelected(o.id)} aria-pressed={o.id===order.id}>{o.id} · {o.customer}<small>{o.delivery.name}</small></button>)}</div><DeliveryJourney key={order.id} {...{order,act,busy,clockOffset,readOnly}}/></>:<div className="delivery-empty-stage"><span aria-hidden="true">Pickup → Drop-off</span><div><b>No courier trips yet</b><p>Choose Delivery at the order counter to follow a courier here.</p></div></div>}
-  </section>;
+export function DeliveryJourney({
+  order,
+  act,
+  busy,
+  clockOffset = 0,
+  readOnly = false,
+}) {
+  const [now, setNow] = useState(Date.now() + clockOffset);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now() + clockOffset), 80);
+    return () => clearInterval(timer);
+  }, [clockOffset]);
+  if (!order?.delivery) return null;
+  const d = order.delivery,
+    trip = deliveryProgress(order, now);
+  const labels = {
+    waiting: "The kitchen has your ticket.",
+    to_restaurant: "Courier approaching Nova.",
+    at_restaurant: "Ready for verified handoff.",
+    on_way: "On the way to the customer.",
+    at_home: "At your door.",
+    delivered: "Delivery confirmed.",
+  };
+  const stage = ["waiting"].includes(trip.stage)
+    ? -1
+    : ["to_restaurant", "at_restaurant"].includes(trip.stage)
+      ? 0
+      : trip.stage === "on_way"
+        ? 1
+        : trip.stage === "at_home"
+          ? 2
+          : 3;
+  const progress = ["on_way", "at_home", "delivered"].includes(trip.stage)
+    ? trip.progress
+    : 0;
+  return (
+    <section
+      className="district-journey"
+      aria-label={"Delivery tracking for " + order.id}
+    >
+      <div className="district-stage-heading">
+        <div>
+          <small>
+            {order.id} / {order.customer} → {d.name}
+          </small>
+          <h2>{labels[trip.stage]}</h2>
+        </div>
+        <div>
+          <strong>
+            {trip.stage === "delivered"
+              ? "✓"
+              : trip.stage === "at_home"
+                ? "0"
+                : trip.seconds}
+            <small>
+              {trip.stage === "delivered"
+                ? "DELIVERED"
+                : trip.stage === "on_way" || trip.stage === "at_home"
+                  ? "SECONDS TO DOOR"
+                  : trip.stage === "to_restaurant"
+                    ? "SECONDS TO PICKUP"
+                    : "DEMO SECONDS"}
+            </small>
+          </strong>
+        </div>
+      </div>
+      <div className="district-map-wrap">
+        <DistrictMap {...{ order, trip }} />
+        <div className="district-map-key">
+          <span>● NOVA</span>
+          <span>● COURIER</span>
+          <span>● DESTINATION</span>
+        </div>
+      </div>
+      <div className="district-progress">
+        <span style={{ transform: `scaleX(${progress})` }} />
+      </div>
+      <div className="district-trip-bar">
+        <div className="district-stages" aria-label="Delivery stages">
+          {STEPS.map((label, i) => (
+            <span
+              key={label}
+              className={i <= stage ? "is-reached" : ""}
+              aria-current={i === stage ? "step" : undefined}
+            >
+              <i>
+                {i < stage || trip.stage === "delivered"
+                  ? "✓"
+                  : String(i + 1).padStart(2, "0")}
+              </i>
+              {label}
+            </span>
+          ))}
+        </div>
+        <div className="district-distance">
+          <b>
+            {trip.remainingKm.toFixed(1)} <small>KM LEFT</small>
+          </b>
+          <span>{Math.round(progress * 100)}% OF ROUTE</span>
+        </div>
+      </div>
+      <div className="district-action">
+        {!readOnly && trip.stage === "at_restaurant" ? (
+          <button
+            className="primary"
+            disabled={!!busy}
+            onClick={() =>
+              act("/orders/" + order.id + "/collect", {
+                code: order.pickupCode,
+              })
+            }
+          >
+            Match {order.pickupCode} & dispatch courier ↗
+          </button>
+        ) : !readOnly && trip.stage === "at_home" ? (
+          <button
+            className="primary"
+            disabled={!!busy}
+            onClick={() => act("/orders/" + order.id + "/deliver")}
+          >
+            Confirm delivery received ✓
+          </button>
+        ) : (
+          <p>
+            {trip.stage === "waiting"
+              ? "Complete cooking, packing verification and bag confirmation before dispatch."
+              : trip.stage === "to_restaurant"
+                ? "The courier must reach Nova before reference matching."
+                : trip.stage === "on_way"
+                  ? "The courier is heading to your house. Receipt unlocks on arrival."
+                  : trip.stage === "delivered"
+                    ? "✓ Delivery receipt is shared with the kitchen and owner."
+                    : readOnly
+                      ? "Spectator view. A player confirms the handoff."
+                      : ""}
+          </p>
+        )}
+        <small>
+          {d.distanceKm} km · {d.simulatedMinutes} estimated real-world minutes
+          represented by {d.travelSeconds} demo seconds. No real GPS or
+          delivery.
+        </small>
+      </div>
+    </section>
+  );
+}
+export function DeliveryBoard({
+  state,
+  act,
+  busy,
+  clockOffset,
+  readOnly = false,
+  preferredOrderId = "",
+}) {
+  const [selected, setSelected] = useState("");
+  const orders = [...state.orders]
+    .reverse()
+    .filter((o) => o.delivery && o.status !== "cancelled");
+  useEffect(() => {
+    if (preferredOrderId) setSelected(preferredOrderId);
+  }, [preferredOrderId]);
+  const order =
+    orders.find((o) => o.id === selected) ||
+    orders.find((o) => o.id === preferredOrderId) ||
+    orders.find((o) => o.status !== "delivered") ||
+    orders[0];
+  return (
+    <section
+      id="delivery-simulator"
+      className="district-board"
+      aria-label="Delivery simulator"
+    >
+      {orders.length ? (
+        <>
+          <div
+            className="delivery-order-tabs"
+            aria-label="Choose delivery order"
+          >
+            {orders.map((o) => (
+              <button
+                key={o.id}
+                onClick={() => setSelected(o.id)}
+                aria-pressed={o.id === order.id}
+              >
+                {o.id} · {o.customer}
+                <small>{o.delivery.name}</small>
+              </button>
+            ))}
+          </div>
+          <DeliveryJourney
+            key={order.id}
+            {...{ order, act, busy, clockOffset, readOnly }}
+          />
+        </>
+      ) : (
+        <>
+          <div className="district-map-wrap">
+            <DistrictMap />
+            <Panel className="district-empty">
+              <span className="eyebrow">WAITING FOR DISPATCH</span>
+              <h2>Ready to follow the delivery.</h2>
+              <p>
+                Place a delivery order as Customer. Once the bag is verified,
+                your courier will appear on this map.
+              </p>
+            </Panel>
+          </div>
+        </>
+      )}
+    </section>
+  );
 }

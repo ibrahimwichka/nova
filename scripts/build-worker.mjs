@@ -8,9 +8,10 @@ function collect(dir, prefix = '') {
     const relative = `${prefix}/${item.name}`;
     if (item.isDirectory()) { if (item.name !== 'server' && item.name !== '.openai') collect(path.join(dir, item.name), relative); }
     else {
-      const type = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml' }[path.extname(item.name)];
+      const type = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.txt': 'text/plain; charset=utf-8', '.ttf': 'font/ttf', '.woff2': 'font/woff2' }[path.extname(item.name)];
       if (!type) throw new Error(`Unsupported asset: ${relative}`);
-      assets[relative] = { type, content: readFileSync(path.join(dir, item.name), 'utf8') };
+      const binary = /\.(ttf|woff2)$/.test(item.name);
+      assets[relative] = { type, binary, content: readFileSync(path.join(dir, item.name), binary ? 'base64' : 'utf8') };
     }
   }
 }
