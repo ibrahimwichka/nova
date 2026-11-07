@@ -34,6 +34,7 @@ export function initialState() {
     ],
     inventory: { buns: 12, patties: 12, chicken: 7, tortillas: 10, potatoes: 18, drinks: 16 },
     orders: [],
+    operations: {},
     scenarios: [],
     appliedPlan: null,
     playback: null,
